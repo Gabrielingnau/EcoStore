@@ -35,9 +35,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      eco_store:
-        specifier: 'link:'
-        version: 'link:'
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.0.0)

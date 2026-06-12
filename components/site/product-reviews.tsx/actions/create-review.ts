@@ -27,11 +27,8 @@ export async function createReview({
     throw new Error(error.message);
   }
 
-  revalidateTag(
-    `reviews-${product_id}`
-  );
+  // Substitua as chamadas antigas por esta estrutura:
+ revalidateTag(`reviews-${product_id}`, 'max');
 
-  revalidateTag(
-    `product-${product_id}`
-  );
+  revalidateTag(`product-${product_id}`, 'max');
 }

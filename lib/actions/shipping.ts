@@ -40,7 +40,7 @@ export async function getShippingRates(originZip: string, destinationZip: string
         quantity: i.quantity
       })),
       options: {
-        receipt: false,
+        receipt: true,
         own_hand: false
       },
       services: "1,2,18"

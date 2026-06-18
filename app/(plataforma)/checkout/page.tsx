@@ -4,22 +4,24 @@ import { AlertCircle, MapPin, Plus, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { BackButton } from "@/components/site/back-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/use-auth";
 import { useStore } from "@/hooks/use-store";
 import { createCheckoutSession } from "@/lib/actions/checkout";
-import { maskCPF } from "@/lib/utils";
+import { isLocalZip, maskCPF } from "@/lib/utils";
 
 import { useAddress } from "../endereco/hooks/use-address";
 import { AddressCard } from "./components/AddressCard";
 import { OrderSummary } from "./components/OrderSummary";
+import { ShippingCard } from "./components/ShippingCard";
 import { ShippingOptions } from "./components/ShippingOptions";
 import { ValidationAlert } from "./components/ValidationAlert";
 import { useCheckout } from "./hooks/use-checkout";
 import { useShipping } from "./hooks/use-shipping";
-import { BackButton } from "@/components/site/back-button";
 
 export default function CheckoutPage() {
   const [step, setStep] = useState<"shipping" | "review">("shipping");
@@ -37,7 +39,11 @@ export default function CheckoutPage() {
   );
   const hasNoAddress = !addresses || addresses.length === 0;
 
-  // EFEITO: Sincroniza endereço ativo com o formulário para validar campos ocultos
+  const isLocal = useMemo(() => {
+    if (!activeAddress?.zip_code || !config?.zip_code) return false;
+    return isLocalZip(activeAddress.zip_code, config.zip_code);
+  }, [activeAddress, config]);
+
   useEffect(() => {
     if (activeAddress) {
       form.setValue("zip", activeAddress.zip_code, { shouldValidate: true });
@@ -48,17 +54,46 @@ export default function CheckoutPage() {
 
   const { data: shippingRates, isLoading } = useShipping(
     config?.zip_code,
-    activeAddress?.zip_code,
+    activeAddress?.zip_code, // Passe sempre o CEP do cliente
     items,
   );
 
-  const total = useMemo(() => {
-    return Number(subtotal) + (Number(selectedRate?.price) || 0);
-  }, [subtotal, selectedRate]);
+  const localOptions = useMemo(() => {
+    if (!isLocal) return [];
+    const opts: {
+      id: string;
+      name: string;
+      price: number;
+      delivery_time: string;
+      type: "pickup" | "local_delivery";
+    }[] = [];
+    if (config?.allow_local_pickup)
+      opts.push({
+        id: "pickup",
+        name: "Retirada na Loja",
+        price: 0,
+        delivery_time: "Imediato",
+        type: "pickup",
+      });
+    if (config?.allow_local_delivery)
+      opts.push({
+        id: "local",
+        name: "Entrega Própria",
+        price: config.local_delivery_fee || 18,
+        delivery_time: "1 dia útil",
+        type: "local_delivery",
+      });
+    return opts;
+  }, [isLocal, config]);
+
+  const total = useMemo(
+    () => Number(subtotal) + (Number(selectedRate?.price) || 0),
+    [subtotal, selectedRate],
+  );
 
   return (
     <div>
-      <BackButton/>
+      <BackButton />
       <h1 className="text-3xl font-black mb-8">
         {step === "shipping" ? "Finalizar compra" : "Revisão do Pedido"}
       </h1>
@@ -69,22 +104,17 @@ export default function CheckoutPage() {
             <Card className="border-dashed border-2 border-primary/20 bg-primary/5">
               <CardContent className="p-8 text-center flex flex-col items-center gap-4">
                 <AlertCircle className="w-10 h-10 text-primary" />
-                <div className="space-y-1">
-                  <h3 className="font-bold text-lg">
-                    Nenhum endereço cadastrado
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Cadastre um endereço para calcular o frete e continuar.
-                  </p>
-                </div>
+                <h3 className="font-bold text-lg">
+                  Nenhum endereço cadastrado
+                </h3>
                 <Button
                   nativeButton={false}
                   render={
                     <Link href="/endereco">
-                      <Plus className="mr-2 w-4 h-4" /> Cadastrar novo endereço
+                      <Plus className="mr-2 w-4 h-4" /> Cadastrar
                     </Link>
                   }
-                ></Button>
+                />
               </CardContent>
             </Card>
           ) : (
@@ -92,7 +122,7 @@ export default function CheckoutPage() {
               <AddressCard
                 address={activeAddress}
                 addresses={addresses}
-                onActivate={(id: string) => activateAddress(id)}
+                onActivate={activateAddress}
                 isPending={isPending}
               />
 
@@ -130,19 +160,63 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              <ShippingOptions
-                options={shippingRates}
-                isLoading={isLoading}
-                onSelect={setSelectedRate}
-                selectedId={selectedRate?.id ?? ""}
-              />
-
-              <ValidationAlert
-                errors={form.formState.errors}
-                hasNoAddress={hasNoAddress}
-                selectedRate={selectedRate}
-                isValid={form.formState.isValid}
-              />
+              <div className="space-y-4">
+                <h3 className="font-bold">Opções de Envio</h3>
+                {isLocal ? (
+                  localOptions.length > 0 ? (
+                    <RadioGroup
+                      value={selectedRate?.id ?? ""}
+                      onValueChange={(id) =>
+                        setSelectedRate(localOptions.find((o) => o.id === id))
+                      }
+                    >
+                      {localOptions.map((opt) => (
+                        <ShippingCard key={opt.id} {...opt} />
+                      ))}
+                    </RadioGroup>
+                  ) : (
+                    <Card className="border border-border bg-card">
+                      <CardContent className="p-6 text-center space-y-4">
+                        <div className="mx-auto w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center">
+                          <AlertCircle className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-foreground">
+                            Frete não disponível
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            Estamos na mesma região, mas não encontramos opções
+                            de entrega configuradas.
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            render={
+                              <Link href="/endereco">Revisar endereço</Link>
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Precisa de ajuda?{" "}
+                            <strong>
+                              <Link href="/contato">Entre em contato</Link>
+                            </strong>{" "}
+                            com nossa equipe.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                ) : (
+                  <ShippingOptions
+                    options={shippingRates}
+                    isLoading={isLoading}
+                    onSelect={setSelectedRate}
+                    selectedId={selectedRate?.id ?? ""}
+                  />
+                )}
+              </div>
             </>
           )}
 
@@ -160,7 +234,6 @@ export default function CheckoutPage() {
           </Button>
         </div>
       ) : (
-        // ... parte da revisão (deixei igual, pois está correta)
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
@@ -183,13 +256,15 @@ export default function CheckoutPage() {
                 </h3>
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    {selectedRate?.company?.name} - {selectedRate?.name}
+                    {selectedRate?.type === "pickup" ||
+                    selectedRate?.type === "local_delivery"
+                      ? "Entrega Local"
+                      : `${selectedRate?.company?.name} - ${selectedRate?.name}`}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Prazo estimado: {selectedRate?.delivery_time} dias úteis
+                    Prazo: {selectedRate?.delivery_time}
                   </p>
                 </div>
-
                 <div className="pt-3 border-t border-border">
                   <h4 className="text-xs font-bold uppercase text-muted-foreground mb-1">
                     Informações para NF
@@ -207,10 +282,17 @@ export default function CheckoutPage() {
             disabled={isStripeLoading}
             onClick={async () => {
               setIsStripeLoading(true);
-
-              // Montando o payload com log para debug
               const checkoutPayload = {
-                items,
+                items: items.map((item: any) => ({
+                  ...item,
+                  product: {
+                    ...item.product,
+                    weight: item.product.weight || 0.3,
+                    width: item.product.width || 10,
+                    height: item.product.height || 10,
+                    length: item.product.length || 10,
+                  },
+                })),
                 shipping: selectedRate,
                 user: {
                   id: user?.id,
@@ -220,16 +302,10 @@ export default function CheckoutPage() {
                   document: form.getValues("document"),
                   address: activeAddress?.street,
                   city: activeAddress?.city,
-                  state: activeAddress?.state, // <--- ADICIONADO: Garanta que esta propriedade exista no activeAddress
+                  state: activeAddress?.state,
                   zip: activeAddress?.zip_code,
                 },
               };
-
-              console.log(
-                "DEBUG: Payload enviado para createCheckoutSession:",
-                checkoutPayload,
-              );
-
               try {
                 const { url } = await createCheckoutSession(checkoutPayload);
                 if (url) window.location.href = url;

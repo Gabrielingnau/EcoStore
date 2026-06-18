@@ -29,7 +29,7 @@ export function ProductImageCarousel({
       <div className="relative overflow-hidden rounded-2xl bg-card border border-border" ref={emblaRef}>
         <div className="flex">
           {list.map((src, i) => (
-            <div key={i} className="relative flex-[0_0_100%] aspect-[4/4]">
+            <div key={i} className="relative flex-[0_0_100%] aspect-5/5">
               <Image src={src} alt={`${alt} ${i + 1}`} fill priority={i === 0} sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             </div>
           ))}

@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     }
 
     // 6. Redireciona com sucesso
-    return NextResponse.redirect(new URL("/configuracoes?success=true", request.url));
+    return NextResponse.redirect(new URL("http://localhost:3000/configuracoes?success=true", request.url));
   }
 
   // 7. Tratamento caso a troca do código falhe (ex: code revogado/expirado)

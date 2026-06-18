@@ -2,7 +2,7 @@ import { Package, Inbox } from "lucide-react";
 
 interface EmptyStateProps {
   title: string;
-  description: string;
+  description?: string;
   iconType: "product" | "order";
 }
 

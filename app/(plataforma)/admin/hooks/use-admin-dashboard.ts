@@ -7,20 +7,26 @@ import { useAuth } from "@/hooks/use-auth";
 import { getAdminDashboardData } from "../services/admin-service";
 
 export type StatusFilterType = "todos" | "ativos" | "inativos";
+export type OrderTabType = "pendentes" | "arquivados";
 
 export function useAdminDashboard() {
   const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<"produtos" | "pedidos">("produtos");
   
-  // Novo estado para controlar o filtro do Admin
+  // Estado para Produtos
   const [statusFilter, setStatusFilter] = useState<StatusFilterType>("todos");
+  
+  // Estados para Pedidos
+  const [searchTerm, setSearchTerm] = useState("");
+  const [orderTab, setOrderTab] = useState<OrderTabType>("pendentes");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("todos");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-data"],
     queryFn: getAdminDashboardData,
     enabled: !!user && isAdmin,
-    refetchOnWindowFocus: true,
+    refetchInterval: 10000,
     staleTime: 0,
   });
 
@@ -33,7 +39,7 @@ export function useAdminDashboard() {
     }
   }, [user, isAdmin, authLoading, router]);
 
-  // Aplica o filtro de forma performática na memória
+  // Aplica o filtro de produtos na memória
   const filteredProducts = useMemo(() => {
     const allProducts = data?.products ?? [];
     
@@ -47,13 +53,46 @@ export function useAdminDashboard() {
     return allProducts;
   }, [data?.products, statusFilter]);
 
+  // Aplica o filtro e busca de pedidos na memória
+  const filteredOrders = useMemo(() => {
+    const allOrders = data?.orders ?? [];
+    
+    // 1. Filtra por Aba (Ativos/Arquivados)
+    let list = allOrders.filter((o: any) => 
+      orderTab === "pendentes" ? !o.is_archived : o.is_archived
+    );
+
+    // 2. Filtra por Status do pedido
+    if (orderStatusFilter !== "todos") {
+      list = list.filter((o: any) => o.status === orderStatusFilter);
+    }
+    
+    // 3. Filtra por termo de busca (ID, Protocolo ou CPF/Documento)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase().replace(/\D/g, ""); // Limpa termo para busca numérica
+      list = list.filter((o: any) => 
+        o.id.toLowerCase().includes(term) || 
+        o.melhor_envio_protocol?.toLowerCase().includes(term) ||
+        o.shipping_document?.replace(/\D/g, "").includes(term)
+      );
+    }
+    
+    return list;
+  }, [data?.orders, searchTerm, orderTab, orderStatusFilter]);
+
   return {
     tab,
     setTab,
     statusFilter,
     setStatusFilter,
-    products: filteredProducts, // Retorna os produtos já filtrados pelo estado
-    orders: data?.orders ?? [],
+    searchTerm,
+    setSearchTerm,
+    orderTab,
+    setOrderTab,
+    orderStatusFilter,
+    setOrderStatusFilter,
+    products: filteredProducts,
+    orders: filteredOrders,
     isInitialLoading: authLoading || isLoading,
     isAdmin,
   };

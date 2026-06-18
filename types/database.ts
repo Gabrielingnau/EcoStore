@@ -12,8 +12,60 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string | null
+          expires_at: string | null
+          provider: string | null
+          refresh_token: string | null
+          singleton_id: boolean
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          provider?: string | null
+          refresh_token?: string | null
+          singleton_id?: boolean
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          provider?: string | null
+          refresh_token?: string | null
+          singleton_id?: boolean
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
@@ -76,14 +128,22 @@ export type Database = {
           created_at: string
           estimated_delivery: string | null
           id: string
+          is_archived: boolean | null
           last_tracking_event: string | null
+          melhor_envio_protocol: string | null
+          payment_status: string
           refund_status: string
           shipping_address: string
           shipping_city: string
+          shipping_company_name: string | null
           shipping_cost: number | null
+          shipping_document: string | null
           shipping_email: string | null
           shipping_name: string
           shipping_phone: string | null
+          shipping_service_id: string | null
+          shipping_state: string | null
+          shipping_type: string | null
           shipping_zip: string
           status: string
           total: number
@@ -95,14 +155,22 @@ export type Database = {
           created_at?: string
           estimated_delivery?: string | null
           id?: string
+          is_archived?: boolean | null
           last_tracking_event?: string | null
+          melhor_envio_protocol?: string | null
+          payment_status?: string
           refund_status?: string
           shipping_address: string
           shipping_city: string
+          shipping_company_name?: string | null
           shipping_cost?: number | null
+          shipping_document?: string | null
           shipping_email?: string | null
           shipping_name: string
           shipping_phone?: string | null
+          shipping_service_id?: string | null
+          shipping_state?: string | null
+          shipping_type?: string | null
           shipping_zip: string
           status?: string
           total: number
@@ -114,14 +182,22 @@ export type Database = {
           created_at?: string
           estimated_delivery?: string | null
           id?: string
+          is_archived?: boolean | null
           last_tracking_event?: string | null
+          melhor_envio_protocol?: string | null
+          payment_status?: string
           refund_status?: string
           shipping_address?: string
           shipping_city?: string
+          shipping_company_name?: string | null
           shipping_cost?: number | null
+          shipping_document?: string | null
           shipping_email?: string | null
           shipping_name?: string
           shipping_phone?: string | null
+          shipping_service_id?: string | null
+          shipping_state?: string | null
+          shipping_type?: string | null
           shipping_zip?: string
           status?: string
           total?: number
@@ -276,8 +352,54 @@ export type Database = {
           },
         ]
       }
+      store_config: {
+        Row: {
+          address: string
+          allow_local_delivery: boolean | null
+          allow_local_pickup: boolean | null
+          city: string
+          email: string
+          id: boolean
+          local_delivery_fee: number | null
+          name: string
+          phone: string
+          state: string
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          allow_local_delivery?: boolean | null
+          allow_local_pickup?: boolean | null
+          city: string
+          email: string
+          id?: boolean
+          local_delivery_fee?: number | null
+          name: string
+          phone: string
+          state: string
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          allow_local_delivery?: boolean | null
+          allow_local_pickup?: boolean | null
+          city?: string
+          email?: string
+          id?: boolean
+          local_delivery_fee?: number | null
+          name?: string
+          phone?: string
+          state?: string
+          updated_at?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       user_addresses: {
         Row: {
+          active: boolean | null
           city: string | null
           id: string
           role: string | null
@@ -288,6 +410,7 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          active?: boolean | null
           city?: string | null
           id?: string
           role?: string | null
@@ -298,6 +421,7 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          active?: boolean | null
           city?: string | null
           id?: string
           role?: string | null
@@ -482,6 +606,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],

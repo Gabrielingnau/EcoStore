@@ -4,26 +4,22 @@ import { UserAddress } from "../types/user-settings-types";
 const supabase = supabaseBrowser() as any;
 
 export async function getAddresses(userId: string) {
-  // Busca todos os endereços do usuário atual, independente de ser admin ou não
   const { data, error } = await supabase
     .from("user_addresses")
     .select("*")
     .eq("user_id", userId)
-    .order("active", { ascending: false }); // Traz o ativo primeiro
+    .order("active", { ascending: false });
 
   if (error) throw error;
   return data;
 }
 
-// No seu address-service.ts
 export async function saveAddress(data: UserAddress & { user_id: string }) {
-  // Busca se o usuário já possui endereços
   const { data: existingAddresses } = await supabase
     .from("user_addresses")
     .select("id")
     .eq("user_id", data.user_id);
 
-  // Se for o primeiro, define como ativo
   const isFirst = !existingAddresses || existingAddresses.length === 0;
 
   const { error } = await supabase
@@ -37,6 +33,16 @@ export async function saveAddress(data: UserAddress & { user_id: string }) {
   if (error) throw error;
 }
 
+// NOVA FUNÇÃO: Atualiza um endereço existente
+export async function updateAddress(addressId: string, data: UserAddress) {
+  const { error } = await supabase
+    .from("user_addresses")
+    .update(data)
+    .eq("id", addressId);
+
+  if (error) throw error;
+}
+
 export async function deleteAddress(addressId: string) {
   const { error } = await supabase
     .from("user_addresses")
@@ -47,7 +53,6 @@ export async function deleteAddress(addressId: string) {
 }
 
 export async function setActiveAddress(addressId: string, userId: string) {
-  console.log("Ativando endereço", { addressId, userId });
   const { error: deactivateError } = await supabase
     .from("user_addresses")
     .update({ active: false })
@@ -55,7 +60,6 @@ export async function setActiveAddress(addressId: string, userId: string) {
 
   if (deactivateError) throw deactivateError;
 
-  // 2. Ativa o endereço selecionado
   const { error: activateError } = await supabase
     .from("user_addresses")
     .update({ active: true })

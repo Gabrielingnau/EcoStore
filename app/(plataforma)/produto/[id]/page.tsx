@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import { AddToCartButton } from "./add-to-cart-button";
 import { getProductDetails } from "./hooks/use-product-details";
 import { cn } from "@/lib/utils"; // 👈 Importante para gerenciar classes dinâmicas
+import { BuyNowButton } from "./components/buy-now-button";
 
 export const revalidate = 30;
 
@@ -102,8 +103,12 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
           </div>
 
           {/* Botão de Adicionar ao carrinho (que já deve possuir estado disabled interno) */}
-          <div className="mt-10">
+          <div className="mt-10 flex flex-col gap-3">
+            {/* Mantemos o de adicionar ao carrinho para quem quer continuar comprando */}
             <AddToCartButton product={product} />
+            
+            {/* O novo botão que redireciona direto */}
+            <BuyNowButton product={product} />
           </div>
         </div>
       </div>

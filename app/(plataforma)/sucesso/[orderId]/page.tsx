@@ -1,50 +1,58 @@
+"use client";
+
+import { use, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { formatBRL } from "@/lib/utils";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ShoppingBag, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useCart } from "@/lib/store/cart";
+import { Card, CardContent } from "@/components/ui/card";
 
-// Imports das camadas separadas
-import { getOrder } from "./services/get-order";
-import type { SuccessPageProps } from "./types/success-type";
-
-export default async function SuccessPage({ params }: SuccessPageProps) {
-  // Resolve o parâmetro da Promise do Next.js
-  const resolvedParams = await params;
+// Ajustamos o tipo para receber a Promise
+export default function SuccessPage({ params }: { params: Promise<{ orderId: string }> }) {
+  // Desempacotamos o params usando o React.use()
+  const resolvedParams = use(params);
   const orderId = resolvedParams.orderId;
+  
+  const clearCart = useCart((state) => state.clear);
 
-  // Busca o pedido utilizando o service isolado
-  const order = await getOrder(orderId);
+  // Limpa o carrinho ao carregar a página de sucesso
+  useEffect(() => {
+    clearCart();
+  }, [clearCart]);
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-20 text-center">
-      <CheckCircle2 className="h-20 w-20 text-primary mx-auto mb-6" />
-      
-      <h1 className="text-3xl font-bold text-foreground tracking-tight">
-        Pedido confirmado!
-      </h1>
-      
-      <p className="text-sm text-muted-foreground mt-2 font-medium">
-        Pedido #{orderId ? orderId.toString().slice(0, 8) : ""}
-      </p>
+    <div className="mx-auto">
+      <Card className="border-none shadow-xl bg-gradient-to-b from-card to-muted/20">
+        <CardContent className="pt-10 pb-8 text-center flex flex-col items-center">
+          <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle2 className="h-10 w-10 text-primary" />
+          </div>
+          
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            Tudo certo!
+          </h1>
+          <p className="text-muted-foreground mt-2 font-medium">
+            Seu pedido foi confirmado com sucesso.
+          </p>
+          
+          <div className="mt-6 p-4 bg-background border rounded-2xl w-full flex justify-between items-center">
+            <span className="text-sm font-semibold text-muted-foreground">Número do pedido:</span>
+            <span className="font-mono font-bold text-foreground">#{orderId.slice(0, 8).toUpperCase()}</span>
+          </div>
 
-      {order && (
-        <p className="mt-4 text-2xl font-black text-primary tracking-tight drop-shadow-sm">
-          {formatBRL(Number(order.total))}
-        </p>
-      )}
-
-      <div className="mt-10 flex gap-3 justify-center">
-        <Link href="/perfil">
-          <Button variant="secondary" className="rounded-xl font-semibold">
-            Meus pedidos
-          </Button>
-        </Link>
-        <Link href="/">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold transition-smooth">
-            Continuar comprando
-          </Button>
-        </Link>
-      </div>
+          <div className="mt-8 space-y-3 w-full">
+            <Link href="/perfil" className="block">
+              <Button className="w-full h-12 rounded-xl font-bold text-base" size="lg">
+                Ver detalhes do pedido
+              </Button>
+            </Link>
+            
+            <Link href="/" className="flex items-center justify-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors py-2">
+              <ShoppingBag className="h-4 w-4" /> Continuar comprando <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

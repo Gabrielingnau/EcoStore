@@ -62,13 +62,14 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
     ],
     options: {
       insurance_value: totalValue,
-      receipt: false,
+      receipt: true,
       own_hand: false,
       collect: false,
+      tags: [`ORDER-${data.orderId}`],
+      platform: store.name,
     },
   };
 
-  // Log do payload enviado
   console.log("Payload enviado para Melhor Envio:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(
@@ -79,7 +80,7 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
         Authorization: `Bearer ${integration.access_token}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-        "User-Agent": "MinhaLoja (contato@exemplo.com)",
+        "User-Agent": `${store.name} (${store.email})`,
       },
       body: JSON.stringify(payload),
     },
@@ -88,23 +89,29 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
   const result = await response.json();
 
   if (!response.ok) {
-    // Log detalhado para identificar o erro específico do Melhor Envio
     console.error("=== FALHA NA INTEGRAÇÃO MELHOR ENVIO ===");
     console.error("Status da Resposta:", response.status);
     console.error("Detalhes do Erro:", JSON.stringify(result, null, 2));
-    console.error("==========================================");
     
     throw new Error(
-      result.message || 
-      result.errors ? JSON.stringify(result.errors) : "Falha na integração com Melhor Envio"
+      result.message || "Falha na integração com Melhor Envio"
     );
   }
 
-  await supabase
+  // ATUALIZAÇÃO CRÍTICA: Salvando o protocol para garantir a vinculação no Webhook
+  // Certifique-se de que a coluna 'melhor_envio_protocol' existe na tabela 'orders'
+  const { error: updateError } = await supabase
     .from("orders")
-    .update({ status: "preparing" }) // Ou o status que você preferir
+    .update({ 
+      status: "preparando",
+      melhor_envio_protocol: result.protocol 
+    })
     .eq("id", data.orderId);
 
-  console.log("Sucesso! Item adicionado ao carrinho do Melhor Envio.");
+  if (updateError) {
+    console.error("Erro ao salvar protocolo no Supabase:", updateError);
+  }
+
+  console.log("Sucesso! Protocolo salvo e pedido enviado:", result.protocol);
   return result;
 }

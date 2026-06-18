@@ -49,7 +49,7 @@ export function CartDrawer() {
             </header>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
               {items.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-20">
                   <p className="text-lg font-medium text-foreground mb-2">Sua sacola está vazia</p>

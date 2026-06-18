@@ -1,19 +1,43 @@
 "use client";
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  MapPin,
+  Phone,
+  Settings,
+  Shield,
+  ShoppingBag,
+  User as UserIcon,
+} from "lucide-react";
 import Link from "next/link";
-import { ShoppingBag, User as UserIcon, Shield, LogOut, Phone, MapPin, Settings } from "lucide-react"; 
-import { useCart, useCartCount } from "@/lib/store/cart";
-import { useAuth } from "@/hooks/use-auth";
-import { useStore } from "@/hooks/use-store"; // Import do seu hook de loja
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useRouter, usePathname } from "next/navigation";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useAuth } from "@/hooks/use-auth";
+import { useStore } from "@/hooks/use-store";
+import { useCart, useCartCount } from "@/lib/store/cart";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { NotificationBell } from "./notificatio-bell";
 
 export function SiteHeader() {
   const setOpen = useCart((s) => s.setOpen);
   const count = useCartCount();
   const { user, isAdmin, loading } = useAuth();
-  const { config } = useStore(); // Acessando dados globais da loja
+  const { config } = useStore();
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
@@ -36,78 +60,115 @@ export function SiteHeader() {
               {config?.name.charAt(0) || "I"}
             </span>
           </div>
-          {/* Nome da loja dinâmico vindo do useStore */}
           <span className="font-bold text-xl tracking-tight hidden sm:block">
             {config?.name || "Loja"}
           </span>
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <Link href="/contato" className="h-10 w-10 sm:w-auto sm:px-4 rounded-xl hover:bg-secondary transition-smooth flex items-center justify-center gap-2 font-medium text-sm">
-            <Phone className="h-4 w-4 sm:hidden" />
+          <Link
+            href="/contato"
+            className="h-10 w-10 sm:w-auto sm:px-4 rounded-xl hover:bg-secondary transition-smooth flex items-center justify-center gap-2 font-medium text-sm"
+          >
+            <Phone className="h-4 w-4" />
             <span className="hidden sm:inline">Contato</span>
           </Link>
 
+          <NotificationBell userId={user?.id} />
+
           {loading ? (
             <div className="h-10 w-10 rounded-xl bg-secondary/50 animate-pulse" />
-          ) : (
+          ) : user ? (
             <>
+              {/* --- MODO PC: Ícones separados --- */}
               {isAdmin && (
-                <>
-                  {/* Ícone de Engrenagem (Configurações) apenas para Admin */}
-                  <Link 
-                    href="/configuracoes" 
-                    className={`h-10 w-10 rounded-xl transition-smooth flex items-center justify-center ${
-                      pathname === "/admin/configuracoes" ? "bg-accent" : "hover:bg-accent"
-                    }`}
-                    aria-label="Configurações da Loja"
+                <div className="hidden md:flex items-center gap-2">
+                  <Link
+                    href="/configuracoes"
+                    className={`h-10 w-10 rounded-xl flex items-center justify-center ${pathname === "/configuracoes" ? "bg-accent" : "hover:bg-accent"}`}
                   >
                     <Settings className="h-5 w-5" />
                   </Link>
-
-                  <Link 
-                    href="/admin" 
-                    className={`h-10 w-10 sm:w-auto sm:px-4 rounded-xl transition-smooth flex items-center justify-center gap-2 font-semibold text-sm ${
-                      pathname === "/admin" ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary hover:bg-primary/20"
-                    }`}
+                  <Link
+                    href="/admin"
+                    className={`h-10 px-4 rounded-xl flex items-center gap-2 ${pathname === "/admin" ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}
                   >
-                    <Shield className="h-4 w-4" />
-                    <span className="hidden sm:inline">Admin</span>
+                    <Shield className="h-4 w-4" /> <span>Admin</span>
                   </Link>
-                </>
+                </div>
               )}
 
-              {user ? (
-                <>
-                  <Link 
-                    href="/endereco" 
-                    className={`h-10 w-10 rounded-xl transition-smooth flex items-center justify-center ${
-                      pathname === "/endereco" ? "bg-accent" : "bg-secondary hover:bg-accent"
-                    }`}
-                    aria-label="Endereços"
-                  >
-                    <MapPin className="h-4 w-4" />
-                  </Link>
-                  
-                  <Link href="/perfil" className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center" aria-label="Perfil">
-                    <UserIcon className="h-5 w-5" />
-                  </Link>
-                  <button onClick={handleLogout} className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center" aria-label="Sair">
-                    <LogOut className="h-5 w-5" />
-                  </button>
-                </>
-              ) : (
-                <Link href="/login" className="h-10 px-4 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center font-medium text-sm">
-                  Entrar
+              <div className="hidden md:flex items-center gap-2">
+                <Link
+                  href="/endereco"
+                  className={`h-10 w-10 rounded-xl flex items-center justify-center ${pathname === "/endereco" ? "bg-accent" : "bg-secondary hover:bg-accent"}`}
+                >
+                  <MapPin className="h-4 w-4" />
                 </Link>
-              )}
+                <Link
+                  href="/perfil"
+                  className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent flex items-center justify-center"
+                >
+                  <UserIcon className="h-5 w-5" />
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent flex items-center justify-center"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* --- MODO CELULAR: Dropdown único --- */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="h-10 w-auto px-2 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center gap-1">
+                    <UserIcon className="h-5 w-5" />
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuItem onClick={() => router.push("/admin")}>
+                          <Shield className="mr-2 h-4 w-4" /> Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => router.push("/configuracoes")}
+                        >
+                          <Settings className="mr-2 h-4 w-4" /> Configs
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={() => router.push("/perfil")}>
+                      <UserIcon className="mr-2 h-4 w-4" /> Perfil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/endereco")}>
+                      <MapPin className="mr-2 h-4 w-4" /> Endereços
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-500"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" /> Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
+          ) : (
+            <Link
+              href="/login"
+              className="h-10 px-4 rounded-xl bg-secondary hover:bg-accent flex items-center font-medium text-sm"
+            >
+              Entrar
+            </Link>
           )}
 
           <button
             onClick={() => setOpen(true)}
             className="relative h-10 w-10 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center"
-            aria-label="Abrir carrinho"
           >
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (

@@ -8,7 +8,7 @@ export default function ContactPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-16 space-y-8 animate-pulse">
+      <div className=" space-y-8 animate-pulse">
         <div className="space-y-2">
           <div className="h-10 w-48 bg-muted rounded-lg" />
           <div className="h-4 w-96 bg-muted rounded-lg" />
@@ -25,7 +25,7 @@ export default function ContactPage() {
   const hasContact = config?.email || config?.phone || config?.address;
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16 space-y-8">
+    <div className=" space-y-8">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground">Fale conosco</h1>
         <p className="text-muted-foreground mt-2">Estamos aqui para ajudar. Escolha o canal de sua preferência:</p>

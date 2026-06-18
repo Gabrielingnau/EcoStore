@@ -2,15 +2,16 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { 
   updateOrderStatusService, 
   updateRefundStatusService,
 } from "../services/admin-service";
-import { syncOrderTracking } from "@/lib/actions/tracking"; // Importando a Action
-import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio"; // Importando a Action
+import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio";
 
 export function useAdminOrders() {
   const queryClient = useQueryClient();
+  const supabase = supabaseBrowser();
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => 
@@ -32,17 +33,21 @@ export function useAdminOrders() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Nova mutação de Rastreio
-  const trackingMutation = useMutation({
-    mutationFn: ({ id, code }: { id: string; code: string }) => syncOrderTracking(id, code),
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, is_archived }: { id: string; is_archived: boolean | null }) => {
+      const { error } = await (supabase.from("orders") as any)
+        .update({ is_archived })
+        .eq("id", id);
+        
+      if (error) throw error;
+    },
     onSuccess: () => {
-      toast.success("Rastreio atualizado!");
+      toast.success("Pedido atualizado com sucesso.");
       queryClient.invalidateQueries({ queryKey: ["admin-data"] });
     },
     onError: (err: any) => toast.error(err.message),
   });
 
-  // Nova mutação de Reenvio
   const retryMutation = useMutation({
     mutationFn: (order: any) => enviarParaCarrinhoMelhorEnvio(order),
     onSuccess: () => {
@@ -55,11 +60,11 @@ export function useAdminOrders() {
   return {
     updateStatus: statusMutation.mutate,
     updateRefund: refundMutation.mutate,
-    updateTracking: trackingMutation.mutate,
+    updateArchive: archiveMutation.mutate,
     retryOrder: retryMutation.mutate,
     isStatusPending: statusMutation.isPending,
     isRefundPending: refundMutation.isPending,
-    isTrackingPending: trackingMutation.isPending,
+    isArchivePending: archiveMutation.isPending,
     isRetryPending: retryMutation.isPending,
   };
 }

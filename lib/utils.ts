@@ -67,3 +67,12 @@ export const maskCPF = (v: string) => {
     .replace(/(\d{3})(\d)/, "$1.$2")
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
+
+export function isLocalZip(clientZip: string, storeZip: string): boolean {
+  // Remove qualquer caractere que não seja número (hífen, espaço)
+  const cleanClient = clientZip.replace(/\D/g, "");
+  const cleanStore = storeZip.replace(/\D/g, "");
+
+  // Compara os 5 primeiros dígitos
+  return cleanClient.substring(0, 5) === cleanStore.substring(0, 5);
+}

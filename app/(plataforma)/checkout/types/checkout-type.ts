@@ -33,6 +33,22 @@ export interface CheckoutFormData {
   document: string; // Adicionado
 }
 
+const validateCPF = (cpf: string) => {
+  cpf = cpf.replace(/[^\d]/g, "");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  let sum = 0;
+  let remainder;
+  for (let i = 1; i <= 9; i++) sum += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+  remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(cpf.substring(9, 10))) return false;
+  sum = 0;
+  for (let i = 1; i <= 10; i++) sum += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+  remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  return remainder === parseInt(cpf.substring(10, 11));
+};
+
 export const checkoutSchema = yup.object({
   name: yup.string().required("Nome é obrigatório"),
   email: yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
@@ -42,6 +58,6 @@ export const checkoutSchema = yup.object({
   city: yup.string().required("Cidade é obrigatória"),
   // Valida o CPF com ou sem pontos/traço
   document: yup.string()
-    .required("CPF é obrigatório")
-    .test("len", "CPF inválido", (val) => unmask(val || "").length === 11),
+  .required("CPF é obrigatório")
+  .test("is-valid-cpf", "CPF inválido", (val) => validateCPF(val || ""))
 });

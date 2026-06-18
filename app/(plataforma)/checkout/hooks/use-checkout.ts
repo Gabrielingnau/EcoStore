@@ -16,6 +16,8 @@ export function useCheckout() {
   const { profile } = useAuth();
   const router = useRouter();
   const { items, clear } = useCart();
+
+  console.log("Itens no carrinho:", items);
   
   const form = useForm<CheckoutFormData>({
     resolver: yupResolver(checkoutSchema),
@@ -27,7 +29,7 @@ export function useCheckout() {
       zip: "", 
       address: "", 
       city: "", 
-      document: "" 
+      document: "", 
     },
   });
 

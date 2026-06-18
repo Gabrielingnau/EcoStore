@@ -16,7 +16,8 @@ export const getAllProducts = unstable_cache(
         nome,
         preco,
         imagem_url,
-        destaque
+        destaque,
+        estoque
       `,
       )
       // 🔴 O FILTRO DA VITRINE: Garante que os clientes só vejam os produtos ativos

@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   const supabase = createClientForMiddleware(req, response);
 
   // 1. ROTAS PÚBLICAS
-  const publicRoutes = ["/login", "/callback", "/forgot-password", "/cadastro", "/produto"];
+  const publicRoutes = ["/login", "/forgot-password", "/cadastro", "/produto"];
   if (publicRoutes.some((route) => path.startsWith(route))) {
     return response;
   }

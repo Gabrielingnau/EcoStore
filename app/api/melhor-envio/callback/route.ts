@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   }
 
   // 3. Troca o código pelo token no Melhor Envio
-  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/oauth/authorize`, {
+  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/oauth/token`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",

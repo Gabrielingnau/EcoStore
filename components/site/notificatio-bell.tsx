@@ -67,8 +67,8 @@ export function NotificationBell({ userId }: { userId?: string }) {
         </div>
         
         {/* ScrollArea melhorado */}
-        <ScrollArea className="h-full max-h-[300px]">
-          <div className="flex flex-col">
+        <ScrollArea className="max-h-75">
+          <div className="flex flex-col overflow-auto max-h-75">
             {notifications.length > 0 ? (
               notifications.map((n: any) => (
                 <div key={n.id} className="group relative flex flex-col gap-0.5 p-4 border-b hover:bg-secondary/50 transition-colors">
@@ -90,7 +90,6 @@ export function NotificationBell({ userId }: { userId?: string }) {
               </div>
             )}
           </div>
-          <ScrollBar orientation="vertical" />
         </ScrollArea>
       </PopoverContent>
     </Popover>

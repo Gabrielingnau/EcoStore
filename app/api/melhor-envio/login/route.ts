@@ -5,7 +5,7 @@ export async function GET() {
   const params = new URLSearchParams({
     client_id: process.env.MELHOR_ENVIO_CLIENT_ID!,
     redirect_uri:
-      "https://family-eggshell-lumping.ngrok-free.dev/api/melhor-envio/callback",
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/melhor-envio/callback`,
     response_type: "code",
     // Adicione todos os escopos necessários separados por espaço
     scope:

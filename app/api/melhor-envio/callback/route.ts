@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       grant_type: "authorization_code",
       client_id: process.env.MELHOR_ENVIO_CLIENT_ID,
       client_secret: process.env.MELHOR_ENVIO_CLIENT_SECRET,
-      redirect_uri: "https://family-eggshell-lumping.ngrok-free.dev/api/melhor-envio/callback", 
+      redirect_uri: `${process.env.NEXT_PUBLIC_BASE_URL}/api/melhor-envio/callback`, 
       code: code,
     }),
   });
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     }
 
     // 6. Redireciona com sucesso
-    return NextResponse.redirect(new URL("http://localhost:3000/configuracoes?success=true", request.url));
+    return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASE_URL}/configuracoes?success=true`, request.url));
   }
 
   // 7. Tratamento caso a troca do código falhe (ex: code revogado/expirado)

@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No code provided" }, { status: 400 });
   }
 
-  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/oauth/token`, {
+  const response = await fetch("https://api.melhorenvio.com.br/oauth/token", {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",

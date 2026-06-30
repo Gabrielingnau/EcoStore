@@ -8,27 +8,22 @@ export async function GET(request: Request) {
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 
-  // 1. Tratamento de erro retornado pelo provedor
+  // 1. Tratamento de erro vindo do Melhor Envio
   if (error) {
     console.error("Erro retornado pelo Melhor Envio:", { error, errorDescription });
-    return NextResponse.json({ 
-      error: "Autorização negada pelo provedor", 
-      details: error,
-      description: errorDescription 
-    }, { status: 400 });
+    return NextResponse.json({ error: "Autorização negada pelo provedor", details: error }, { status: 400 });
   }
 
   // 2. Validação de código
   if (!code) {
-    console.error("Callback chamado sem código.");
-    return NextResponse.json({ 
-      error: "No code provided",
-      message: "O Melhor Envio não enviou o código de autorização."
-    }, { status: 400 });
+    return NextResponse.json({ error: "No code provided" }, { status: 400 });
   }
 
-  // 3. Troca o código pelo token no Melhor Envio
-  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/oauth/token`, {
+  // 3. Troca do código pelo token
+  // Forçamos a URL de produção para garantir que não estamos chamando o endpoint errado
+  const MELHOR_ENVIO_URL = "https://api.melhorenvio.com.br";
+
+  const response = await fetch(`${MELHOR_ENVIO_URL}/oauth/token`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
@@ -43,36 +38,45 @@ export async function GET(request: Request) {
     }),
   });
 
-  const data = await response.json();
+  // Leitura segura da resposta para evitar erro de syntax (Unexpected token <)
+  const responseText = await response.text();
+  let data;
 
-  // 4. Se obteve o token com sucesso
+  try {
+    data = JSON.parse(responseText);
+  } catch (e) {
+    console.error("ERRO: Resposta inválida (HTML detectado):", responseText);
+    return NextResponse.json({ 
+      error: "O Melhor Envio retornou um formato inválido. Verifique o console da Vercel.", 
+      raw: responseText 
+    }, { status: 500 });
+  }
+
+  // 4. Se a requisição falhou, logamos o detalhe real
+  if (!response.ok) {
+    console.error("ERRO DO MELHOR ENVIO (OAuth):", data);
+    return NextResponse.json({ error: "Falha na troca de token", details: data }, { status: response.status });
+  }
+
+  // 5. Salva no banco
   if (data.access_token) {
     const supabase = await supabaseServer();
 
-    // 5. Salva no banco usando a lógica Singleton
-    // Como a tabela só tem uma linha com singleton_id = true, o upsert substituirá os tokens
     const { error: dbError } = await supabase.from("integrations").upsert({
       singleton_id: true,
       provider: 'melhor_envio',
       access_token: data.access_token,
       refresh_token: data.refresh_token,
-      expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+      expires_at: new Date(Date.now() + (data.expires_in || 3600) * 1000).toISOString(),
     });
 
     if (dbError) {
       console.error("Erro ao salvar no banco:", dbError);
-      return NextResponse.json({ error: "Falha ao salvar token no banco", details: dbError }, { status: 500 });
+      return NextResponse.json({ error: "Falha ao salvar token no banco" }, { status: 500 });
     }
 
-    // 6. Redireciona com sucesso
-    return NextResponse.redirect(new URL(`${process.env.NEXT_PUBLIC_BASE_URL}/configuracoes?success=true`, request.url));
+    return NextResponse.redirect(new URL(`/configuracoes?success=true`, process.env.NEXT_PUBLIC_BASE_URL!));
   }
 
-  // 7. Tratamento caso a troca do código falhe (ex: code revogado/expirado)
-  console.error("Erro do Melhor Envio (OAuth):", data); 
-  return NextResponse.json({ 
-    error: "Falha na troca do código pelo token", 
-    details: data,
-    hint: "O código pode ter expirado ou já ter sido utilizado." 
-  }, { status: 500 });
+  return NextResponse.json({ error: "Token não retornado pelo provedor", details: data }, { status: 500 });
 }

@@ -14,6 +14,6 @@ export async function GET() {
   });
 
   return NextResponse.redirect(
-    `https://sandbox.melhorenvio.com.br/oauth/authorize?${params.toString()}`,
+    `${process.env.MELHOR_ENVIO_URL}/oauth/authorize?${params.toString()}`,
   );
 }

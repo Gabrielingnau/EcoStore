@@ -19,11 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "No code provided" }, { status: 400 });
   }
 
-  // 3. Troca do código pelo token
-  // Forçamos a URL de produção para garantir que não estamos chamando o endpoint errado
-  const MELHOR_ENVIO_URL = "https://api.melhorenvio.com.br";
-
-  const response = await fetch(`${MELHOR_ENVIO_URL}/oauth/token`, {
+  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/oauth/token`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",

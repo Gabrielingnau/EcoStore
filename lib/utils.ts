@@ -76,3 +76,8 @@ export function isLocalZip(clientZip: string, storeZip: string): boolean {
   // Compara os 5 primeiros dígitos
   return cleanClient.substring(0, 5) === cleanStore.substring(0, 5);
 }
+
+export const maskDecimal = (value: string) => {
+  // Permite apenas números e uma vírgula ou ponto
+  return value.replace(/[^0-9.,]/g, "").replace(",", ".");
+};

@@ -173,7 +173,7 @@ export default function ConfiguracoesPage() {
               </h3>
               <div className="grid sm:grid-cols-3 gap-4">
                 <ControlledInput control={control} name="city" label="Cidade" errors={errors} />
-                <ControlledInput control={control} name="state" label="UF" errors={errors} />
+                <ControlledInput control={control} name="state" label="UF" errors={errors} className="uppercase"/>
                 <ControlledInput control={control} name="zip_code" label="CEP" errors={errors} mask={maskCEP} />
               </div>
               <ControlledInput control={control} name="address" label="Endereço Completo" errors={errors} />
@@ -192,7 +192,7 @@ export default function ConfiguracoesPage() {
   );
 }
 
-function ControlledInput({ control, name, label, errors, mask }: any) {
+function ControlledInput({ control, name, label, errors, mask, className }: any) {
   return (
     <Controller
       control={control}
@@ -203,7 +203,7 @@ function ControlledInput({ control, name, label, errors, mask }: any) {
           <input
             value={mask ? mask(value || "") : value || ""}
             onChange={(e) => onChange(mask ? unmask(e.target.value) : e.target.value)}
-            className="w-full bg-background border border-input px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            className={`w-full bg-background border border-input px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 ${className || ""}`}
           />
           {errors[name] && <p className="text-xs text-red-500">{errors[name]?.message as string}</p>}
         </div>

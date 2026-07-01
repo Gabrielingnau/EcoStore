@@ -79,29 +79,57 @@ export function ProductForm(props: ProductFormProps) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Nome</Label>
-              <Input className="rounded-xl" {...register("nome")} />
+              <Input placeholder="Ex: Camiseta Básica" className="rounded-xl" {...register("nome")} />
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Categoria</Label>
-              <Input className="rounded-xl" {...register("categoria")} />
+              <Input placeholder="Ex: Vestuário" className="rounded-xl" {...register("categoria")} />
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Preço</Label>
               <Controller control={control} name="preco" render={({ field }) => (
-                <Input value={maskBRL(field.value)} onChange={(e) => field.onChange(parseBRLToStringDigits(e.target.value))} />
+                <Input placeholder="R$ 0,00" value={maskBRL(field.value)} onChange={(e) => field.onChange(parseBRLToStringDigits(e.target.value))} />
               )}/>
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Estoque</Label>
               <Controller control={control} name="estoque" render={({ field }) => (
-                <Input value={field.value === 0 ? "" : field.value} onChange={(e) => field.onChange(Number(maskOnlyNumbers(e.target.value)))} />
+                <Input placeholder="0" value={field.value === 0 ? "" : field.value} onChange={(e) => field.onChange(Number(maskOnlyNumbers(e.target.value)))} />
+              )}/>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground">Peso (kg)</Label>
+              <Controller control={control} name="weight" render={({ field }) => (
+                // Aceita decimais (ex: 0.300)
+                <Input placeholder="0.300" value={field.value || ""} onChange={(e) => field.onChange(e.target.value.replace(/[^0-9.]/g, ""))} />
+              )}/>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground">Largura (cm)</Label>
+              <Controller control={control} name="width" render={({ field }) => (
+                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
+              )}/>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground">Altura (cm)</Label>
+              <Controller control={control} name="height" render={({ field }) => (
+                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
+              )}/>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase text-muted-foreground">Comp. (cm)</Label>
+              <Controller control={control} name="length" render={({ field }) => (
+                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
               )}/>
             </div>
           </div>
           
           <div className="space-y-2">
             <Label className="text-xs uppercase text-muted-foreground">Descrição</Label>
-            <Textarea className="rounded-xl min-h-[100px]" {...register("descricao")} />
+            <Textarea placeholder="Descreva os detalhes do produto..." className="rounded-xl min-h-[100px]" {...register("descricao")} />
           </div>
 
           <div className="space-y-3">
@@ -109,12 +137,13 @@ export function ProductForm(props: ProductFormProps) {
             {imagemUrlCapa && (
               <div className="relative h-32 w-28 rounded-xl overflow-hidden border">
                 <Image src={imagemUrlCapa} alt="capa" fill className="object-cover" />
-                <button type="button" onClick={() => setValue("imagem_url", "")} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full">
-                  <Trash2 className="h-3 w-3" />
+                <button type="button" onClick={() => setValue("imagem_url", "")} 
+                  className="absolute top-1 right-1 bg-destructive/90 hover:bg-destructive text-white p-1.5 rounded-full transition-colors">
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
-            <label className="flex items-center gap-2 h-10 px-4 rounded-xl bg-secondary cursor-pointer text-xs font-semibold w-fit">
+            <label className="flex items-center gap-2 h-10 px-4 rounded-xl bg-secondary hover:bg-secondary/80 cursor-pointer text-xs font-semibold w-fit transition-colors">
               <Upload className="h-3.5 w-3.5" /> Upload Capa
               <input type="file" className="hidden" onChange={(e) => handleMainImageUpload(e, (url) => setValue("imagem_url", url))} />
             </label>
@@ -126,8 +155,9 @@ export function ProductForm(props: ProductFormProps) {
               {extraImages.map((img) => (
                 <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border">
                   <Image src={img.url} alt="" fill className="object-cover" />
-                  <button type="button" onClick={() => handleRemoveExtraImage(img.id, img.isNewLocal)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full">
-                    <Trash2 className="h-3 w-3" />
+                  <button type="button" onClick={() => handleRemoveExtraImage(img.id, img.isNewLocal)} 
+                    className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))}
@@ -138,7 +168,6 @@ export function ProductForm(props: ProductFormProps) {
             </label>
           </div>
 
-          {/* AÇÕES DE ENVIO RESPONSIVAS */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
             <Button type="submit" disabled={saving || uploading} className="w-full sm:flex-1 h-12 rounded-xl font-bold">
               {saving ? "Salvando..." : "Salvar Produto"}

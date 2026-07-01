@@ -38,18 +38,38 @@ export function NotificationBell({ userId }: { userId?: string }) {
   });
 
   useEffect(() => {
-    if (!userId) return;
-    const channel = supabaseBrowser()
-      .channel('notifications-channel')
-      .on('postgres_changes', { 
-        event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
-        toast.info("Nova notificação!");
-      })
-      .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [userId, queryClient]);
+  if (!userId) return;
+
+  // Solicita permissão ao carregar o componente se ainda não tiver
+  if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+    Notification.requestPermission();
+  }
+
+  const channel = supabaseBrowser()
+    .channel('notifications-channel')
+    .on('postgres_changes', { 
+      event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` 
+    }, (payload) => {
+      const newNotification = payload.new;
+      
+      // 1. Atualiza o React Query
+      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+      
+      // 2. Dispara o toast do site
+      toast.info(newNotification.title || "Nova notificação!");
+
+      // 3. Dispara a notificação do Sistema Operacional (Celular/Desktop)
+      if (Notification.permission === "granted") {
+        new Notification(newNotification.title || "EcoStore", {
+          body: newNotification.message,
+          icon: '/icon-192.png', // Coloque o caminho do seu ícone na pasta public
+        });
+      }
+    })
+    .subscribe();
+
+  return () => { channel.unsubscribe(); };
+}, [userId, queryClient]);
 
   return (
     <Popover>

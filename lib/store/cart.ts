@@ -1,8 +1,9 @@
 "use client";
 
+import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { toast } from "sonner";
+
 import { CartItem, Product } from "./types";
 
 interface CartState {
@@ -17,7 +18,9 @@ interface CartState {
 
 const obterEstoqueSeguro = (estoque: any): number => {
   const num = Number(estoque);
-  return Number.isNaN(num) || estoque === undefined || estoque === null ? 999 : num;
+  return Number.isNaN(num) || estoque === undefined || estoque === null
+    ? 999
+    : num;
 };
 
 const obterPrecoSeguro = (preco: any): number => {
@@ -40,21 +43,30 @@ export const useCart = create<CartState>()(
       open: false,
       setOpen: (open) => set({ open }),
       add: (product, quantity = 1) => {
+        console.log("--- LOG ADICIONAR AO CARRINHO ---");
+        console.log("Produto original recebido:", product);
+
         const items = get().items;
         const existing = items.find((i) => i.product.id === product.id);
-        
+
         const estoqueDisponivel = obterEstoqueSeguro(product.estoque);
+        
         const produtoTratado = {
           ...product,
           preco: obterPrecoSeguro(product.preco),
-          estoque: estoqueDisponivel
+          estoque: estoqueDisponivel,
         };
+
+        console.log("Produto tratado (que será salvo):", produtoTratado);
 
         const qtdAdicionar = Number.isNaN(quantity) ? 1 : quantity;
 
         if (existing) {
+          console.log("Produto já existe, atualizando quantidade...");
           if (existing.quantity >= estoqueDisponivel) {
-            toast.error(`Não é possível adicionar mais unidades de "${product.nome}". Limite de estoque atingido.`);
+            toast.error(
+              `Não é possível adicionar mais unidades de "${product.nome}". Limite de estoque atingido.`,
+            );
             set({ open: true });
             return;
           }
@@ -63,22 +75,35 @@ export const useCart = create<CartState>()(
         const next = existing
           ? items.map((i) =>
               i.product.id === product.id
-                ? { 
-                    ...i, 
-                    quantity: Math.min(i.quantity + qtdAdicionar, estoqueDisponivel) 
+                ? {
+                    ...i,
+                    quantity: Math.min(
+                      i.quantity + qtdAdicionar,
+                      estoqueDisponivel,
+                    ),
+                    // Garantia: ao atualizar o existente, também garantimos os dados de logística
+                    product: { ...i.product, ...produtoTratado }
                   }
-                : i
+                : i,
             )
-          : [...items, { product: produtoTratado, quantity: Math.min(qtdAdicionar, estoqueDisponivel) }];
-          
+          : [
+              ...items,
+              {
+                product: produtoTratado,
+                quantity: Math.min(qtdAdicionar, estoqueDisponivel),
+              },
+            ];
+
+        console.log("Novo estado do carrinho:", next);
         set({ items: next, open: true });
       },
-      remove: (id) => set({ items: get().items.filter((i) => i.product.id !== id) }),
-      
-      // 🔴 CORREÇÃO AQUI: updateQty agora valida e avisa o usuário com toast
+      remove: (id) =>
+        set({ items: get().items.filter((i) => i.product.id !== id) }),
+
       updateQty: (id, qty) => {
-        if (qty <= 0) return set({ items: get().items.filter((i) => i.product.id !== id) });
-        
+        if (qty <= 0)
+          return set({ items: get().items.filter((i) => i.product.id !== id) });
+
         const safeQty = Number.isNaN(qty) ? 1 : qty;
         let estoqueExcedido = false;
         let nomeProduto = "";
@@ -88,10 +113,9 @@ export const useCart = create<CartState>()(
             const estoqueDisponivel = obterEstoqueSeguro(i.product.estoque);
             nomeProduto = i.product.nome;
 
-            // Se a quantidade nova for maior que o estoque, ativa a flag do erro
             if (safeQty > estoqueDisponivel) {
               estoqueExcedido = true;
-              return { ...i, quantity: estoqueDisponivel }; // Trava no máximo
+              return { ...i, quantity: estoqueDisponivel };
             }
 
             return { ...i, quantity: safeQty };
@@ -99,18 +123,24 @@ export const useCart = create<CartState>()(
           return i;
         });
 
-        // Dispara o toast se o usuário tentou estourar o estoque clicando no "+"
         if (estoqueExcedido) {
-          toast.error(`Desculpe, não temos mais unidades de "${nomeProduto}" em estoque.`);
+          toast.error(
+            `Desculpe, não temos mais unidades de "${nomeProduto}" em estoque.`,
+          );
         }
 
         set({ items: novosItens });
       },
       clear: () => set({ items: [] }),
     }),
-    { name: "ignite_cart_v1", partialize: (s) => ({ items: s.items }) }
-  )
+    { name: "ignite_cart_v2", partialize: (s) => ({ items: s.items }) },
+  ),
 );
 
 export const useCartCount = () =>
-  useCart((s) => s.items.reduce((acc, i) => acc + (Number.isNaN(i.quantity) ? 0 : i.quantity), 0));
+  useCart((s) =>
+    s.items.reduce(
+      (acc, i) => acc + (Number.isNaN(i.quantity) ? 0 : i.quantity),
+      0,
+    ),
+  );

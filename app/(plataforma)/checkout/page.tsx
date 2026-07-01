@@ -19,7 +19,6 @@ import { AddressCard } from "./components/AddressCard";
 import { OrderSummary } from "./components/OrderSummary";
 import { ShippingCard } from "./components/ShippingCard";
 import { ShippingOptions } from "./components/ShippingOptions";
-import { ValidationAlert } from "./components/ValidationAlert";
 import { useCheckout } from "./hooks/use-checkout";
 import { useShipping } from "./hooks/use-shipping";
 
@@ -57,6 +56,8 @@ export default function CheckoutPage() {
     activeAddress?.zip_code, // Passe sempre o CEP do cliente
     items,
   );
+
+  console.log(items, "ITEMS");
 
   const localOptions = useMemo(() => {
     if (!isLocal) return [];

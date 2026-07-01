@@ -11,14 +11,7 @@ export const getAllProducts = unstable_cache(
     const { data, error } = await supabase
       .from("products")
       .select(
-        `
-        id,
-        nome,
-        preco,
-        imagem_url,
-        destaque,
-        estoque
-      `,
+        "*"
       )
       // 🔴 O FILTRO DA VITRINE: Garante que os clientes só vejam os produtos ativos
       .eq("ativo", true)

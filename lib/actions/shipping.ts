@@ -19,7 +19,7 @@ export async function getShippingRates(originZip: string, destinationZip: string
 
   console.log("Calculando frete com Melhor Envio", { originZip, destinationZip });
 
-  const response = await fetch("https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate", {
+  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/api/v2/me/shipment/calculate`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${integration.access_token}`,

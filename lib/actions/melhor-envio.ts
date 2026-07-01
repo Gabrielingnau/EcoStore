@@ -73,7 +73,7 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
   console.log("Payload enviado para Melhor Envio:", JSON.stringify(payload, null, 2));
 
   const response = await fetch(
-    "https://sandbox.melhorenvio.com.br/api/v2/me/cart",
+    `${process.env.MELHOR_ENVIO_URL}/api/v2/me/cart`,
     {
       method: "POST",
       headers: {

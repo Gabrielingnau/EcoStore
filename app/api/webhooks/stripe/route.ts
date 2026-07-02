@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio";
+import { revalidateProductById } from "@/lib/actions/revalidate";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
               .from("products")
               .update({ estoque: novoEstoque })
               .eq("id", item.product_id);
-              
+            revalidateProductById(item.product_id); // Revalida a página do produto para refletir o novo estoque
             console.log(`Estoque do produto ${item.product_id} atualizado para ${novoEstoque}`);
           }
         }

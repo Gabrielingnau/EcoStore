@@ -32,12 +32,24 @@ export async function createCheckoutSession(payload: any) {
   );
   const total = totalItens + Number(payload.shipping.price);
 
-  const calculatedWeight = (isPickup || isLocalDelivery)
-    ? payload.items.reduce((acc: number, i: any) => acc + Number(i.product.weight || 0), 0)
-    : payload.shipping.packages.reduce((acc: number, p: any) => acc + Number(p.weight || 0), 0);
+  const calculatedWeight =
+    isPickup || isLocalDelivery
+      ? payload.items.reduce(
+          (acc: number, i: any) => acc + Number(i.product.weight || 0),
+          0,
+        )
+      : payload.shipping.packages.reduce(
+          (acc: number, p: any) => acc + Number(p.weight || 0),
+          0,
+        );
 
-  const days = (isPickup || isLocalDelivery) ? 1 : (Number(payload.shipping.delivery_time) || 0);
-  const calculatedDeliveryDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const days =
+    isPickup || isLocalDelivery
+      ? 1
+      : Number(payload.shipping.delivery_time) || 0;
+  const calculatedDeliveryDate = new Date(
+    Date.now() + days * 24 * 60 * 60 * 1000,
+  );
 
   // 3. Salvando o pedido
   const { data: order, error: orderError } = await supabase
@@ -47,7 +59,10 @@ export async function createCheckoutSession(payload: any) {
       total: total,
       status: status, // "pronto para retirada", "preparando entrega" ou "pendente"
       shipping_type: shippingType, // "retirada", "entrega própria" ou "melhor envio"
-      tracking_code: (isPickup || isLocalDelivery) ? "Não rastreável" : (payload.shipping.tracking_code || null),
+      tracking_code:
+        isPickup || isLocalDelivery
+          ? "Não rastreável"
+          : payload.shipping.tracking_code || null,
       shipping_name: payload.user.name,
       shipping_address: payload.user.address,
       shipping_city: payload.user.city,
@@ -58,7 +73,9 @@ export async function createCheckoutSession(payload: any) {
       shipping_document: payload.user.document,
       shipping_cost: Number(payload.shipping.price),
       shipping_service_id: String(payload.shipping.id),
-      shipping_company_name: isBetterShipping ? payload.shipping.company.name : payload.shipping.name,
+      shipping_company_name: isBetterShipping
+        ? payload.shipping.company.name
+        : payload.shipping.name,
       total_weight: calculatedWeight,
       estimated_delivery: calculatedDeliveryDate.toISOString(),
     })
@@ -87,7 +104,9 @@ export async function createCheckoutSession(payload: any) {
   await supabase.from("order_items").insert(itemsToInsert);
 
   // 4. Criação no Stripe
-  const shippingName = isBetterShipping ? payload.shipping.company.name : payload.shipping.name;
+  const shippingName = isBetterShipping
+    ? payload.shipping.company.name
+    : payload.shipping.name;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
@@ -114,8 +133,8 @@ export async function createCheckoutSession(payload: any) {
     ],
     metadata: { orderId: order.id },
     mode: "payment",
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/sucesso/${order.id}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/sucesso/${order.id}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
   });
 
   return { url: session.url };

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertCircle,
   Building2,
   Globe,
   Hash,
@@ -14,7 +13,6 @@ import {
   Save,
   Truck,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -62,32 +60,43 @@ export default function ConfiguracoesPage() {
   return (
     <div className="mx-auto space-y-6">
       {/* Status Melhor Envio */}
-      <div
-        className={`border p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm ${isConnected ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}
-      >
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-base md:text-lg font-bold flex items-center gap-2 text-slate-900">
-              <Package size={20} /> Melhor Envio
-            </h2>
-            <p className="text-xs md:text-sm mt-1 text-slate-600">
-              {isConnected === null ? "Verificando..." : isConnected ? "Loja conectada com sucesso." : "Loja desconectada da API."}
-            </p>
+      {/* Bloco condicional: Só aparece se a loja já estiver configurada */}
+      {!isLoading && isConfigured && (
+        <div
+          className={`border p-5 md:p-6 rounded-2xl md:rounded-3xl shadow-sm ${isConnected ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"}`}
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-base md:text-lg font-bold flex items-center gap-2 text-slate-900">
+                <Package size={20} /> Melhor Envio
+              </h2>
+              <p className="text-xs md:text-sm mt-1 text-slate-600">
+                {isConnected === null
+                  ? "Verificando..."
+                  : isConnected
+                    ? "Loja conectada com sucesso."
+                    : "Loja desconectada da API."}
+              </p>
+            </div>
+            <a
+              href="/api/melhor-envio/login"
+              className="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl text-sm font-bold text-white transition bg-blue-600 hover:bg-blue-700"
+            >
+              {isConnected ? "Reconectar" : "Conectar Agora"}
+            </a>
           </div>
-          <a
-            href="/api/melhor-envio/login"
-            className="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl text-sm font-bold text-white transition bg-blue-600 hover:bg-blue-700"
-          >
-            {isConnected ? "Reconectar" : "Conectar Agora"}
-          </a>
         </div>
-      </div>
+      )}
 
       {/* Título e Botão Editar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Configurações da Loja</h1>
-          <p className="text-muted-foreground text-sm mt-1">Gerencie as informações públicas e logística.</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Configurações da Loja
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Gerencie as informações públicas e logística.
+          </p>
         </div>
         {!isEditing && (
           <button
@@ -104,18 +113,47 @@ export default function ConfiguracoesPage() {
         {!isEditing ? (
           <div className="space-y-8 md:space-y-12">
             <div className="border-b border-border/50 pb-6">
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight break-words">{config?.name}</h2>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight break-words">
+                {config?.name}
+              </h2>
             </div>
             <div className="grid sm:grid-cols-2 gap-8 md:gap-12">
-              <Section title="Informações de Contato" icon={<Phone size={18} />}>
-                <InfoItem label="Email" value={config?.email} icon={<Mail size={18} />} />
-                <InfoItem label="Telefone" value={maskPhone(config?.phone || "")} icon={<Phone size={18} />} />
+              <Section
+                title="Informações de Contato"
+                icon={<Phone size={18} />}
+              >
+                <InfoItem
+                  label="Email"
+                  value={config?.email}
+                  icon={<Mail size={18} />}
+                />
+                <InfoItem
+                  label="Telefone"
+                  value={maskPhone(config?.phone || "")}
+                  icon={<Phone size={18} />}
+                />
               </Section>
               <Section title="Localização" icon={<MapPin size={18} />}>
-                <InfoItem label="Endereço" value={config?.address} icon={<Building2 size={18} />} />
+                <InfoItem
+                  label="Endereço"
+                  value={config?.address}
+                  icon={<Building2 size={18} />}
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <InfoItem label="Cidade/UF" value={config?.city ? `${config.city} / ${config.state}` : undefined} icon={<Globe size={18} />} />
-                  <InfoItem label="CEP" value={maskCEP(config?.zip_code || "")} icon={<Hash size={18} />} />
+                  <InfoItem
+                    label="Cidade/UF"
+                    value={
+                      config?.city
+                        ? `${config.city} / ${config.state}`
+                        : undefined
+                    }
+                    icon={<Globe size={18} />}
+                  />
+                  <InfoItem
+                    label="CEP"
+                    value={maskCEP(config?.zip_code || "")}
+                    icon={<Hash size={18} />}
+                  />
                 </div>
               </Section>
             </div>
@@ -123,7 +161,11 @@ export default function ConfiguracoesPage() {
         ) : (
           <form
             onSubmit={handleSubmit((d) => {
-              save({ ...d, phone: unmask(d.phone), zip_code: unmask(d.zip_code) });
+              save({
+                ...d,
+                phone: unmask(d.phone),
+                zip_code: unmask(d.zip_code),
+              });
               setIsEditing(false);
             })}
             className="space-y-8"
@@ -138,7 +180,12 @@ export default function ConfiguracoesPage() {
                   control={control}
                   render={({ field: { onChange, value } }) => (
                     <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                      <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />
+                      <input
+                        type="checkbox"
+                        checked={!!value}
+                        onChange={(e) => onChange(e.target.checked)}
+                        className="h-4 w-4"
+                      />
                       Retirada na Loja
                     </label>
                   )}
@@ -148,7 +195,12 @@ export default function ConfiguracoesPage() {
                   control={control}
                   render={({ field: { onChange, value } }) => (
                     <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
-                      <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4" />
+                      <input
+                        type="checkbox"
+                        checked={!!value}
+                        onChange={(e) => onChange(e.target.checked)}
+                        className="h-4 w-4"
+                      />
                       Entrega Própria
                     </label>
                   )}
@@ -161,9 +213,25 @@ export default function ConfiguracoesPage() {
                 <Building2 size={16} /> Dados de Identidade
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <ControlledInput control={control} name="name" label="Nome da Loja" errors={errors} />
-                <ControlledInput control={control} name="email" label="Email" errors={errors} />
-                <ControlledInput control={control} name="phone" label="Telefone" errors={errors} mask={maskPhone} />
+                <ControlledInput
+                  control={control}
+                  name="name"
+                  label="Nome da Loja"
+                  errors={errors}
+                />
+                <ControlledInput
+                  control={control}
+                  name="email"
+                  label="Email"
+                  errors={errors}
+                />
+                <ControlledInput
+                  control={control}
+                  name="phone"
+                  label="Telefone"
+                  errors={errors}
+                  mask={maskPhone}
+                />
               </div>
             </div>
 
@@ -172,17 +240,56 @@ export default function ConfiguracoesPage() {
                 <MapPin size={16} /> Dados de Localização
               </h3>
               <div className="grid sm:grid-cols-3 gap-4">
-                <ControlledInput control={control} name="city" label="Cidade" errors={errors} />
-                <ControlledInput control={control} name="state" label="UF" errors={errors} className="uppercase"/>
-                <ControlledInput control={control} name="zip_code" label="CEP" errors={errors} mask={maskCEP} />
+                <ControlledInput
+                  control={control}
+                  name="city"
+                  label="Cidade"
+                  errors={errors}
+                />
+                <ControlledInput
+                  control={control}
+                  name="state"
+                  label="UF"
+                  errors={errors}
+                  className="uppercase"
+                />
+                <ControlledInput
+                  control={control}
+                  name="zip_code"
+                  label="CEP"
+                  errors={errors}
+                  mask={maskCEP}
+                />
               </div>
-              <ControlledInput control={control} name="address" label="Endereço Completo" errors={errors} />
+              <ControlledInput
+                control={control}
+                name="address"
+                label="Endereço Completo"
+                errors={errors}
+              />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <button type="button" onClick={() => { reset(); setIsEditing(false); }} className="w-full sm:w-auto px-6 py-3 rounded-xl font-semibold bg-secondary hover:bg-secondary/80">Cancelar</button>
-              <button disabled={isSubmitting} className="flex-1 flex justify-center items-center gap-2 bg-emerald-600 text-white py-3 rounded-xl font-bold transition">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : <Save size={18} />} Salvar Alterações
+              <button
+                type="button"
+                onClick={() => {
+                  reset();
+                  setIsEditing(false);
+                }}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl font-semibold bg-secondary hover:bg-secondary/80"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={isSubmitting}
+                className="flex-1 flex justify-center items-center gap-2 bg-emerald-600 text-white py-3 rounded-xl font-bold transition"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Save size={18} />
+                )}{" "}
+                Salvar Alterações
               </button>
             </div>
           </form>
@@ -192,20 +299,35 @@ export default function ConfiguracoesPage() {
   );
 }
 
-function ControlledInput({ control, name, label, errors, mask, className }: any) {
+function ControlledInput({
+  control,
+  name,
+  label,
+  errors,
+  mask,
+  className,
+}: any) {
   return (
     <Controller
       control={control}
       name={name}
       render={({ field: { onChange, value } }) => (
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-muted-foreground uppercase">{label}</label>
+          <label className="text-xs font-bold text-muted-foreground uppercase">
+            {label}
+          </label>
           <input
             value={mask ? mask(value || "") : value || ""}
-            onChange={(e) => onChange(mask ? unmask(e.target.value) : e.target.value)}
+            onChange={(e) =>
+              onChange(mask ? unmask(e.target.value) : e.target.value)
+            }
             className={`w-full bg-background border border-input px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 ${className || ""}`}
           />
-          {errors[name] && <p className="text-xs text-red-500">{errors[name]?.message as string}</p>}
+          {errors[name] && (
+            <p className="text-xs text-red-500">
+              {errors[name]?.message as string}
+            </p>
+          )}
         </div>
       )}
     />
@@ -215,7 +337,9 @@ function ControlledInput({ control, name, label, errors, mask, className }: any)
 function Section({ title, icon, children }: any) {
   return (
     <div className="space-y-4">
-      <h3 className="flex items-center gap-2 font-bold text-xs uppercase tracking-widest text-muted-foreground">{icon} {title}</h3>
+      <h3 className="flex items-center gap-2 font-bold text-xs uppercase tracking-widest text-muted-foreground">
+        {icon} {title}
+      </h3>
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -226,7 +350,9 @@ function InfoItem({ label, value, icon }: any) {
     <div className="flex gap-3 items-center">
       <div className="p-2 bg-secondary rounded-lg text-primary">{icon}</div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
         <p className="font-semibold text-sm">{value || "Não informado"}</p>
       </div>
     </div>

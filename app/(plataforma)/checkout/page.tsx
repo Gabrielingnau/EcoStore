@@ -123,6 +123,7 @@ export default function CheckoutPage() {
               <AddressCard
                 address={activeAddress}
                 addresses={addresses}
+                onSelect={(id: string) => activateAddress(id)}
                 onActivate={activateAddress}
                 isPending={isPending}
               />

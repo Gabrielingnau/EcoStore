@@ -79,57 +79,46 @@ export function ProductForm(props: ProductFormProps) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Nome</Label>
-              <Input placeholder="Ex: Camiseta Básica" className="rounded-xl" {...register("nome")} />
+              <Input placeholder="Ex: Camiseta Básica" className={cn("rounded-xl", errors.nome && "border-destructive")} {...register("nome")} />
+              {errors.nome && <p className="text-[10px] text-destructive">{errors.nome.message}</p>}
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Categoria</Label>
-              <Input placeholder="Ex: Vestuário" className="rounded-xl" {...register("categoria")} />
+              <Input placeholder="Ex: Vestuário" className={cn("rounded-xl", errors.categoria && "border-destructive")} {...register("categoria")} />
+              {errors.categoria && <p className="text-[10px] text-destructive">{errors.categoria.message}</p>}
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Preço</Label>
               <Controller control={control} name="preco" render={({ field }) => (
-                <Input placeholder="R$ 0,00" value={maskBRL(field.value)} onChange={(e) => field.onChange(parseBRLToStringDigits(e.target.value))} />
+                <Input className={cn(errors.preco && "border-destructive")} placeholder="R$ 0,00" value={maskBRL(field.value)} onChange={(e) => field.onChange(parseBRLToStringDigits(e.target.value))} />
               )}/>
+              {errors.preco && <p className="text-[10px] text-destructive">{errors.preco.message}</p>}
             </div>
             <div className="space-y-2">
               <Label className="text-xs uppercase text-muted-foreground">Estoque</Label>
               <Controller control={control} name="estoque" render={({ field }) => (
-                <Input placeholder="0" value={field.value === 0 ? "" : field.value} onChange={(e) => field.onChange(Number(maskOnlyNumbers(e.target.value)))} />
+                <Input className={cn(errors.estoque && "border-destructive")} placeholder="0" value={field.value === 0 ? "" : field.value} onChange={(e) => field.onChange(Number(maskOnlyNumbers(e.target.value)))} />
               )}/>
+              {errors.estoque && <p className="text-[10px] text-destructive">{errors.estoque.message}</p>}
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground">Peso (kg)</Label>
-              <Controller control={control} name="weight" render={({ field }) => (
-                // Aceita decimais (ex: 0.300)
-                <Input placeholder="0.300" value={field.value || ""} onChange={(e) => field.onChange(e.target.value.replace(/[^0-9.]/g, ""))} />
-              )}/>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground">Largura (cm)</Label>
-              <Controller control={control} name="width" render={({ field }) => (
-                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
-              )}/>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground">Altura (cm)</Label>
-              <Controller control={control} name="height" render={({ field }) => (
-                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
-              )}/>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-muted-foreground">Comp. (cm)</Label>
-              <Controller control={control} name="length" render={({ field }) => (
-                <Input placeholder="10" value={field.value || ""} onChange={(e) => field.onChange(maskOnlyNumbers(e.target.value))} />
-              )}/>
-            </div>
+            {[ { name: "weight", label: "Peso (kg)" }, { name: "width", label: "Largura (cm)" }, { name: "height", label: "Altura (cm)" }, { name: "length", label: "Comp. (cm)" } ].map((field) => (
+              <div key={field.name} className="space-y-2">
+                <Label className="text-xs uppercase text-muted-foreground">{field.label}</Label>
+                <Controller control={control} name={field.name as any} render={({ field: f }) => (
+                  <Input className={cn(errors[field.name as keyof FormDataState] && "border-destructive")} placeholder="0" value={f.value || ""} onChange={(e) => f.onChange(field.name === "weight" ? e.target.value.replace(/[^0-9.]/g, "") : maskOnlyNumbers(e.target.value))} />
+                )}/>
+                {errors[field.name as keyof FormDataState] && <p className="text-[10px] text-destructive">{errors[field.name as keyof FormDataState]?.message}</p>}
+              </div>
+            ))}
           </div>
           
           <div className="space-y-2">
             <Label className="text-xs uppercase text-muted-foreground">Descrição</Label>
-            <Textarea placeholder="Descreva os detalhes do produto..." className="rounded-xl min-h-[100px]" {...register("descricao")} />
+            <Textarea placeholder="Descreva os detalhes do produto..." className={cn("rounded-xl min-h-[100px]", errors.descricao && "border-destructive")} {...register("descricao")} />
+            {errors.descricao && <p className="text-[10px] text-destructive">{errors.descricao.message}</p>}
           </div>
 
           <div className="space-y-3">
@@ -143,10 +132,11 @@ export function ProductForm(props: ProductFormProps) {
                 </button>
               </div>
             )}
-            <label className="flex items-center gap-2 h-10 px-4 rounded-xl bg-secondary hover:bg-secondary/80 cursor-pointer text-xs font-semibold w-fit transition-colors">
+            <label className={cn("flex items-center gap-2 h-10 px-4 rounded-xl bg-secondary hover:bg-secondary/80 cursor-pointer text-xs font-semibold w-fit transition-colors", errors.imagem_url && "border border-destructive")}>
               <Upload className="h-3.5 w-3.5" /> Upload Capa
               <input type="file" className="hidden" onChange={(e) => handleMainImageUpload(e, (url) => setValue("imagem_url", url))} />
             </label>
+            {errors.imagem_url && <p className="text-[10px] text-destructive">{errors.imagem_url.message}</p>}
           </div>
 
           <div className="space-y-3 pt-4 border-t">

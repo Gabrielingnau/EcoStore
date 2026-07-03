@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Trash2, Edit2 } from "lucide-react";
+import { Edit2, MapPin, Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -63,12 +63,15 @@ export default function AddressPage() {
 
   const onSubmit = (data: UserAddress) => {
     if (editingId) {
-      update({ id: editingId, data }, {
-        onSuccess: () => {
-          setEditingId(null);
-          form.reset();
-        }
-      });
+      update(
+        { id: editingId, data },
+        {
+          onSuccess: () => {
+            setEditingId(null);
+            form.reset();
+          },
+        },
+      );
     } else {
       save(data, {
         onSuccess: () => {
@@ -85,14 +88,21 @@ export default function AddressPage() {
     form.setValue("street", addr.street);
     form.setValue("city", addr.city);
     form.setValue("state", addr.state);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Adicione esta linha para preservar o status de "principal"
+    form.setValue("active", addr.active);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="pb-14">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight">Meus Endereços</h1>
-        <p className="text-muted-foreground">Gerencie seus endereços de entrega.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Meus Endereços
+        </h1>
+        <p className="text-muted-foreground">
+          Gerencie seus endereços de entrega.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -108,22 +118,38 @@ export default function AddressPage() {
                   onMask={maskCEP}
                   onChange={(e) => {
                     form.setValue("zip_code", e.target.value);
-                    if (e.target.value.length === 9) handleFetchCep(e.target.value);
+                    if (e.target.value.length === 9)
+                      handleFetchCep(e.target.value);
                   }}
                 />
 
-                <InputGroup label="Rua" placeholder="Ex: Av. Brasil, 123" {...form.register("street")} />
+                <InputGroup
+                  label="Rua"
+                  placeholder="Ex: Av. Brasil, 123"
+                  {...form.register("street")}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <InputGroup label="Cidade" placeholder="Ex: São Paulo" {...form.register("city")} />
-                  <InputGroup label="Estado" placeholder="SP" {...form.register("state")} />
+                  <InputGroup
+                    label="Cidade"
+                    placeholder="Ex: São Paulo"
+                    {...form.register("city")}
+                  />
+                  <InputGroup
+                    label="Estado"
+                    placeholder="SP"
+                    {...form.register("state")}
+                  />
                 </div>
 
                 <div className="flex gap-2">
                   {editingId && (
                     <button
                       type="button"
-                      onClick={() => { setEditingId(null); form.reset(); }}
+                      onClick={() => {
+                        setEditingId(null);
+                        form.reset();
+                      }}
                       className="w-full mt-6 bg-secondary py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
                     >
                       Cancelar
@@ -134,7 +160,11 @@ export default function AddressPage() {
                     disabled={isPending}
                     className="w-full mt-6 bg-primary text-primary-foreground py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
                   >
-                    {isPending ? "Salvando..." : editingId ? "Atualizar Endereço" : "Adicionar Endereço"}
+                    {isPending
+                      ? "Salvando..."
+                      : editingId
+                        ? "Atualizar Endereço"
+                        : "Adicionar Endereço"}
                   </button>
                 </div>
               </fieldset>
@@ -150,35 +180,62 @@ export default function AddressPage() {
                 <MapPin size={32} />
               </div>
               <h3 className="font-bold text-xl">Nenhum endereço cadastrado</h3>
-              <p className="text-muted-foreground max-w-sm text-sm">Adicione um endereço para facilitar suas compras.</p>
+              <p className="text-muted-foreground max-w-sm text-sm">
+                Adicione um endereço para facilitar suas compras.
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
               {addresses.map((addr: any) => (
-                <div key={addr.id} className={`group relative border rounded-2xl p-5 transition-all ${addr.active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}>
+                <div
+                  key={addr.id}
+                  className={`group relative border rounded-2xl p-5 transition-all ${addr.active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 bg-card"}`}
+                >
                   <div className="flex items-start gap-4">
-                    <div className={`mt-1 p-2 rounded-full ${addr.active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <div
+                      className={`mt-1 p-2 rounded-full ${addr.active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground">{addr.street}</h3>
-                        {addr.active && <span className="text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">Principal</span>}
+                        <h3 className="font-semibold text-foreground">
+                          {addr.street}
+                        </h3>
+                        {addr.active && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            Principal
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.state}</p>
-                      <p className="text-sm text-muted-foreground">CEP: {addr.zip_code}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.city}, {addr.state}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        CEP: {addr.zip_code}
+                      </p>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <button onClick={() => handleEdit(addr)} className="text-muted-foreground hover:text-primary transition-colors">
+                      <button
+                        onClick={() => handleEdit(addr)}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setDeleteId(addr.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <button
+                        onClick={() => setDeleteId(addr.id)}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                   {!addr.active && (
-                    <button type="button" onClick={() => setActiveId(addr.id)} className="w-full mt-4 text-xs font-semibold text-primary hover:bg-primary/10 py-2 rounded-lg transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setActiveId(addr.id)}
+                      className="w-full mt-4 text-xs font-semibold text-primary hover:bg-primary/10 py-2 rounded-lg transition-colors"
+                    >
                       Definir como principal
                     </button>
                   )}
@@ -189,8 +246,24 @@ export default function AddressPage() {
         </div>
       </div>
 
-      <DeleteAddressModal isOpen={!!deleteId} onClose={() => setDeleteId(null)} onConfirm={() => { deleteAddress(deleteId!); setDeleteId(null); }} isPending={isPending} />
-      <ActivateAddressModal isOpen={!!activeId} onClose={() => setActiveId(null)} onConfirm={() => { activateAddress(activeId!); setActiveId(null); }} isPending={isPending} />
+      <DeleteAddressModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          deleteAddress(deleteId!);
+          setDeleteId(null);
+        }}
+        isPending={isPending}
+      />
+      <ActivateAddressModal
+        isOpen={!!activeId}
+        onClose={() => setActiveId(null)}
+        onConfirm={() => {
+          activateAddress(activeId!);
+          setActiveId(null);
+        }}
+        isPending={isPending}
+      />
     </div>
   );
 }

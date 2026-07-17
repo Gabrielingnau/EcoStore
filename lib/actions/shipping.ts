@@ -48,10 +48,10 @@ export async function getShippingRates(originZip: string, destinationZip: string
       to: { postal_code: destinationZip },
       products: productsPayload,
       options: {
-        receipt: true,
+        receipt: false,
         own_hand: false
       },
-      services: "1,2,18"
+      services: [1, 2, 18]
     }),
   });
 

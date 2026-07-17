@@ -1,5 +1,4 @@
 import { supabaseBrowser } from "@/lib/supabase/client";
-
 import type { LocalProductImage } from "../types/admin-types";
 
 const supabase = supabaseBrowser() as any;
@@ -41,8 +40,7 @@ export async function uploadStorageFile(file: File): Promise<string> {
     .upload(path, file);
   if (error) throw error;
 
-  return supabase.storage.from("product-images").getPublicUrl(path).data
-    .publicUrl;
+  return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
 }
 
 // === MUTAÇÕES DE PRODUTO ===
@@ -51,6 +49,8 @@ export async function deleteProductService(id: string) {
   if (error) throw error;
 }
 
+// Esta função ainda existe para casos de uso isolados, 
+// mas o fluxo de edição agora usa a lógica dentro de saveProductWithGallery
 export async function deleteExtraImage(id: string) {
   const { error } = await supabase.from("product_images").delete().eq("id", id);
   if (error) throw error;
@@ -60,88 +60,81 @@ export async function saveProductWithGallery({
   form,
   productId,
   localExtraImages,
+  imagesToDelete = [], // Array de IDs de imagens para remover do banco
   mainImageFile,
 }: {
   form: any;
   productId?: string;
   localExtraImages: LocalProductImage[];
+  imagesToDelete?: string[]; 
   mainImageFile?: File;
 }): Promise<string> {
+  // 1. Processa imagem de capa
   let finalCapaUrl = form.imagem_url;
   if (mainImageFile) finalCapaUrl = await uploadStorageFile(mainImageFile);
 
   const productPayload = { ...form, imagem_url: finalCapaUrl };
 
   if (productId) {
-    const { error } = await supabase
+    // === EDIÇÃO ===
+    // Atualiza dados básicos
+    const { error: updateErr } = await supabase
       .from("products")
       .update(productPayload)
       .eq("id", productId);
-    if (error) throw error;
-    return productId;
+    if (updateErr) throw updateErr;
+
+    // Remove as imagens marcadas para exclusão no banco
+    if (imagesToDelete.length > 0) {
+      const { error: delErr } = await supabase
+        .from("product_images")
+        .delete()
+        .in("id", imagesToDelete);
+      if (delErr) throw delErr;
+    }
   } else {
+    // === CRIAÇÃO ===
     const { data: newProduct, error: err } = await supabase
       .from("products")
       .insert(productPayload)
       .select()
       .single();
     if (err) throw err;
-
-    // ... continuação do else (Criação de produto totalmente novo)
-    const pendingExtraFiles = localExtraImages.filter(
-      (img) => img.isNewLocal && img.file,
-    );
-
-    if (pendingExtraFiles.length > 0) {
-      await Promise.all(
-        pendingExtraFiles.map(async (item, index) => {
-          if (item.file) {
-            const publicUrl = await uploadStorageFile(item.file);
-            await supabase.from("product_images").insert({
-              product_id: newProduct.id,
-              url: publicUrl,
-              position: index,
-            });
-          }
-        }),
-      );
-    }
-
-    return newProduct.id;
+    productId = newProduct.id;
   }
+
+  // 2. Insere novas imagens pendentes (tanto para novo produto quanto edição)
+  const pendingExtraFiles = localExtraImages.filter((img) => img.isNewLocal && img.file);
+
+  if (pendingExtraFiles.length > 0) {
+    await Promise.all(
+      pendingExtraFiles.map(async (item) => {
+        if (item.file) {
+          const publicUrl = await uploadStorageFile(item.file);
+          await supabase.from("product_images").insert({
+            product_id: productId,
+            url: publicUrl,
+          });
+        }
+      }),
+    );
+  }
+
+  return productId!;
 }
 
 // === MUTAÇÕES DE PEDIDOS (ORDERS) ===
 export async function updateOrderStatusService(id: string, status: string) {
-  const { error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", id);
+  const { error } = await supabase.from("orders").update({ status }).eq("id", id);
   if (error) throw error;
 }
 
-export async function updateRefundStatusService(
-  id: string,
-  refund_status: string,
-) {
-  const { error } = await supabase
-    .from("orders")
-    .update({ refund_status })
-    .eq("id", id);
+export async function updateRefundStatusService(id: string, refund_status: string) {
+  const { error } = await supabase.from("orders").update({ refund_status }).eq("id", id);
   if (error) throw error;
 }
 
-export async function toggleProductActiveService(
-  id: string,
-  currentStatus: boolean,
-) {
-  const { error } = await supabase
-    .from("products")
-    .update({ ativo: !currentStatus })
-
-    .eq("id", id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
+export async function toggleProductActiveService(id: string, currentStatus: boolean) {
+  const { error } = await supabase.from("products").update({ ativo: !currentStatus }).eq("id", id);
+  if (error) throw new Error(error.message);
 }

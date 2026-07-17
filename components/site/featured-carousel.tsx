@@ -34,7 +34,7 @@ export function FeaturedCarousel({
         }}
         className="w-full"
       >
-        <CarouselContent className="-ml-4">
+        <CarouselContent>
           {products.map((product, index) => {
             const SlideContent = (
               <motion.div

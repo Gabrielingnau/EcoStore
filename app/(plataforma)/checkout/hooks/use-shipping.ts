@@ -7,15 +7,17 @@ export function useShipping(
   destinationZip: string | undefined, 
   items: any[]
 ) {
-  // Criamos uma key baseada nos IDs e quantidades, evitando serializar objetos grandes
   const itemKeys = items.map(i => `${i.product.id}:${i.quantity}`);
 
   return useQuery({
     queryKey: ["shipping-rates", originZip, destinationZip, itemKeys],
-    queryFn: () => getShippingRates(originZip!, destinationZip!, items),
+    queryFn: async () => {
+      // Adicione esta verificação de segurança
+      if (!originZip || !destinationZip) return null;
+      return getShippingRates(originZip, destinationZip, items);
+    },
+    // Remova o "!" e deixe o enabled cuidar da execução
     enabled: !!originZip && !!destinationZip && items.length > 0,
-    // Cache de 5 minutos: evita consultas repetidas em integrações pagas (Melhor Envio)
     staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 10,
   });
 }

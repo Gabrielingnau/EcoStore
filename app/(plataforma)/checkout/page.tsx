@@ -57,6 +57,10 @@ export default function CheckoutPage() {
     items,
   );
 
+  useEffect(() => {
+  console.log("DADOS DO FRETE NO FRONT:", shippingRates);
+}, [shippingRates]);
+
   console.log(items, "ITEMS");
 
   const localOptions = useMemo(() => {

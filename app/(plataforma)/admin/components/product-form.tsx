@@ -103,6 +103,19 @@ export function ProductForm(props: ProductFormProps) {
             </div>
           </div>
 
+          {/* Campo Destaque */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="destaque"
+              {...register("destaque")}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+            />
+            <Label htmlFor="destaque" className="text-xs font-semibold uppercase text-muted-foreground cursor-pointer">
+              Produto em Destaque
+            </Label>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
             {[ { name: "weight", label: "Peso (kg)" }, { name: "width", label: "Largura (cm)" }, { name: "height", label: "Altura (cm)" }, { name: "length", label: "Comp. (cm)" } ].map((field) => (
               <div key={field.name} className="space-y-2">

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio";
-import { revalidateProductById } from "@/lib/actions/revalidate";
+import { revalidateProductById, revalidateProductsList } from "@/lib/actions/revalidate";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -25,88 +25,182 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
-    const orderId = session.metadata.orderId;
+    const metadata = session.metadata || {};
 
     try {
-      // 1. Atualizar status do pagamento para Pago
-      const { error: updateError } = await supabaseAdmin
-        .from("orders")
-        .update({ payment_status: "Pago" }) 
-        .eq("id", orderId);
+      console.log("[WEBHOOK STRIPE] Sessão concluída. Extraindo metadados para criação do pedido...");
 
-      if (updateError) throw new Error("Falha ao atualizar pagamento");
+      // 1. Desserializar os dados salvos no metadata (com suporte completo a chunks)
+      const userData = JSON.parse(metadata.userData || "{}");
+      const shippingData = JSON.parse(metadata.shippingData || "{}");
 
-      // 2. Buscar dados do pedido
-      const { data: order, error: fetchError } = await supabaseAdmin
+      let minimalItems: any[] = [];
+      const chunksCount = parseInt(metadata.itemsChunksCount || "0", 10);
+
+      if (chunksCount > 0) {
+        for (let i = 1; i <= chunksCount; i++) {
+          const chunkStr = metadata[`itemsData_${i}`];
+          if (chunkStr) {
+            minimalItems = minimalItems.concat(JSON.parse(chunkStr));
+          }
+        }
+      } else if (metadata.itemsData) {
+        minimalItems = JSON.parse(metadata.itemsData);
+      }
+
+      const isPickup = shippingData.id === "pickup";
+      const isLocalDelivery = shippingData.id === "local";
+      const isBetterShipping = !isPickup && !isLocalDelivery;
+
+      // Status inicial padrão
+      const statusInicial = metadata.status || "Em Preparação";
+
+      // 2. Inserir o pedido principal no banco de dados
+      const { data: order, error: orderError } = await supabaseAdmin
         .from("orders")
-        .select("*, order_items(*)")
-        .eq("id", orderId)
+        .insert({
+          user_id: metadata.userId,
+          total: Number(metadata.total),
+          status: statusInicial,
+          shipping_type: metadata.shippingType,
+          tracking_code:
+            isPickup || isLocalDelivery
+              ? "Não rastreável"
+              : shippingData.tracking_code || null,
+          shipping_name: userData.name,
+          shipping_address: userData.address,
+          shipping_city: userData.city,
+          shipping_state: userData.state,
+          shipping_zip: userData.zip,
+          shipping_phone: userData.phone,
+          shipping_email: userData.email,
+          shipping_document: userData.document,
+          shipping_cost: Number(shippingData.price),
+          shipping_service_id: String(shippingData.id),
+          shipping_company_name: isBetterShipping
+            ? shippingData.company?.name
+            : shippingData.name,
+          total_weight: Number(metadata.calculatedWeight),
+          estimated_delivery: metadata.calculatedDeliveryDate,
+          payment_status: "Pago",
+        })
+        .select("id")
         .single();
 
-      if (fetchError || !order) throw new Error("Pedido não encontrado");
+      if (orderError || !order) {
+        console.error("Erro ao salvar pedido no Supabase via Webhook:", orderError);
+        throw new Error("Erro ao criar pedido: " + (orderError?.message || "Desconhecido"));
+      }
 
-      // 3. ATUALIZAÇÃO DE ESTOQUE (Feito manualmente no código)
-      for (const item of order.order_items) {
-        if (item.product_id) {
-          // Busca o estoque atual do produto
+      console.log(`[WEBHOOK STRIPE] Pedido ${order.id} criado com sucesso no banco.`);
+
+      // 3. Buscar dados completos de cada produto no Supabase usando o ID mínimo enviado
+      const itemsToInsert = [];
+      for (const item of minimalItems) {
+        const { data: product } = await supabaseAdmin
+          .from("products")
+          .select("*")
+          .eq("id", item.id)
+          .single();
+
+        if (product) {
+          itemsToInsert.push({
+            order_id: order.id,
+            product_id: product.id,
+            product_name: product.nome,
+            product_image: product.imagem_url,
+            unit_price: item.p, // Preço efetivo (já com o desconto promocional aplicado no checkout)
+            quantity: item.q,
+            item_weight: product.weight || 0,
+            item_width: product.width || 0,
+            item_height: product.height || 0,
+            item_length: product.length || 0,
+          });
+        }
+      }
+
+      const { data: insertedItems, error: itemsError } = await supabaseAdmin
+        .from("order_items")
+        .insert(itemsToInsert)
+        .select("*");
+
+      if (itemsError) {
+        console.error("Erro ao salvar itens do pedido:", itemsError);
+        throw new Error("Erro ao salvar itens do pedido");
+      }
+
+      // 4. ATUALIZAÇÃO DE ESTOQUE (Suportando variant_sizes e estoque geral)
+      for (const item of minimalItems) {
+        if (item.id) {
+          // Atualiza o estoque do tamanho específico (variant_size_id / sz) se houver
+          if (item.sz) {
+            const { data: sizeData, error: sizeErr } = await supabaseAdmin
+              .from("variant_sizes")
+              .select("estoque")
+              .eq("id", item.sz)
+              .single();
+
+            if (!sizeErr && sizeData) {
+              const novoEstoqueTamanho = Math.max(0, sizeData.estoque - item.q);
+              await supabaseAdmin
+                .from("variant_sizes")
+                .update({ estoque: novoEstoqueTamanho })
+                .eq("id", item.sz);
+              
+              console.log(`Estoque do tamanho ID ${item.sz} atualizado para ${novoEstoqueTamanho}`);
+            }
+          }
+
+          // Atualiza o estoque geral na tabela products
           const { data: product, error: prodError } = await supabaseAdmin
             .from("products")
             .select("estoque")
-            .eq("id", item.product_id)
+            .eq("id", item.id)
             .single();
 
           if (!prodError && product) {
-            // Calcula o novo estoque (evita números negativos)
-            const novoEstoque = Math.max(0, product.estoque - item.quantity);
+            const novoEstoque = Math.max(0, product.estoque - item.q);
 
-            // Atualiza no banco
             await supabaseAdmin
               .from("products")
               .update({ estoque: novoEstoque })
-              .eq("id", item.product_id);
-            revalidateProductById(item.product_id); // Revalida a página do produto para refletir o novo estoque
-            console.log(`Estoque do produto ${item.product_id} atualizado para ${novoEstoque}`);
+              .eq("id", item.id);
+            
+            revalidateProductById(item.id);
+            revalidateProductsList();
+            console.log(`Estoque geral do produto ${item.id} atualizado para ${novoEstoque}`);
           }
         }
       }
 
-      // 4. LÓGICA DE INTEGRAÇÃO CONDICIONAL
-      // Agora usamos o shipping_type para saber como proceder
-      if (order.shipping_type === 'retirada' || order.shipping_type === 'entrega_propria') {
-        console.log(`[WEBHOOK STRIPE] Pedido ${orderId} local. Nenhuma ação externa necessária.`);
-        // O status já foi definido como "pronto_para_retirada" ou "preparando_entrega" no Checkout, 
-        // então não vamos sobrescrevê-lo aqui!
+      // 5. INTEGRAÇÃO COM MELHOR ENVIO
+      if (metadata.shippingType === 'retirada' || metadata.shippingType === 'entrega_propria') {
+        console.log(`[WEBHOOK STRIPE] Pedido ${order.id} local. Nenhuma ação externa necessária.`);
       } else {
-        // Integração normal com Melhor Envio para pedidos de transportadora
-        console.log(`[WEBHOOK STRIPE] Iniciando integração com Melhor Envio...`);
+        console.log(`[WEBHOOK STRIPE] Enviando pedido ${order.id} para o carrinho do Melhor Envio...`);
         try {
           await enviarParaCarrinhoMelhorEnvio({
             shipping: {
-              id: order.shipping_service_id, 
-              name: order.shipping_name,
-              address: order.shipping_address,
-              city: order.shipping_city,
-              zip: order.shipping_zip,
-              phone: order.shipping_phone,
-              email: order.shipping_email,
-              document: order.shipping_document
+              id: shippingData.id, 
+              name: userData.name,
+              address: userData.address,
+              city: userData.city,
+              zip: userData.zip,
+              phone: userData.phone,
+              email: userData.email,
+              document: userData.document
             },
-            items: order.order_items,
+            items: insertedItems,
             orderId: order.id
           });
           
-          // Se deu certo, atualiza para "Etiqueta Gerada"
-          await supabaseAdmin
-            .from("orders")
-            .update({ status: "Etiqueta Gerada" })
-            .eq("id", orderId);
-            
+          console.log(`[WEBHOOK STRIPE] Item adicionado ao carrinho do Melhor Envio com sucesso!`);
         } catch (integrationError) {
-          console.error("❌ Falha na integração:", integrationError);
+          console.error("❌ Falha na integração com Melhor Envio:", integrationError);
           await supabaseAdmin
             .from("orders")
             .update({ status: "Erro de Integração" })
-            .eq("id", orderId);
+            .eq("id", order.id);
         }
       }
       

@@ -22,7 +22,12 @@ export async function middleware(req: NextRequest) {
   
   // Se não estiver logado, protege rotas privadas básicas
   if (!user) {
-    if (path.startsWith("/admin") || path.startsWith("/configuracoes") || path.startsWith("/endereco")) {
+    if (
+      path.startsWith("/admin") || 
+      path.startsWith("/configuracoes") || 
+      path.startsWith("/endereco") ||
+      path.startsWith("/checkout") // <-- Adicionado aqui
+    ) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
     return response;

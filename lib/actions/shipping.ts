@@ -35,7 +35,7 @@ export async function getShippingRates(originZip: string, destinationZip: string
 
   console.log("Payload de produtos enviado ao Melhor Envio:", JSON.stringify(productsPayload, null, 2));
 
-  const response = await fetch("https://melhorenvio.com.br/api/v2/me/shipment/calculate", {
+  const response = await fetch(`${process.env.MELHOR_ENVIO_URL}/api/v2/me/shipment/calculate`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${integration.access_token}`,
@@ -51,7 +51,7 @@ export async function getShippingRates(originZip: string, destinationZip: string
         receipt: false,
         own_hand: false
       },
-      services: [1, 2, 18]
+      services: "1, 2, 18"
     }),
   });
 

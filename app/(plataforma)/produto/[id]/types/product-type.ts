@@ -1,5 +1,14 @@
 import { Database } from "@/types/database";
 
+export type ProductDatabase = Database["public"]["Tables"]["products"]["Row"];
+export type ProductImagesDatabase = Database["public"]["Tables"]["product_images"]["Row"][];
+
+export type VariantSizeDatabase = Database["public"]["Tables"]["variant_sizes"]["Row"];
+
+export type ProductVariantDatabase = Database["public"]["Tables"]["product_variants"]["Row"] & {
+  variant_sizes?: VariantSizeDatabase[];
+};
+
 export interface Product {
   id: string;
   nome: string;
@@ -11,14 +20,3 @@ export interface Product {
   destaque: boolean;
   created_at: string;
 }
-
-export interface ProductImage {
-  id: string;
-  product_id: string;
-  url: string;
-  position: number;
-  created_at: string;
-}
-
-  export type ProductImagesDatabase = (Database["public"]["Tables"]["product_images"]["Row"])[];
-  export type ProductDatabase = (Database["public"]["Tables"]["products"]["Row"]);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   try {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
     }
 
-    const supabase = await supabaseServer();
+    const supabase = supabaseAdmin;
     let orderData: { id: string, user_id: string } | null = null;
 
     // 1. TENTATIVA VIA PROTOCOL (O identificador mais estável do Melhor Envio)

@@ -1,9 +1,9 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function enviarParaCarrinhoMelhorEnvio(data: any) {
-  const supabase = await supabaseServer();
+  const supabase = supabaseAdmin;
 
   console.log("Iniciando integração com Melhor Envio...");
 
@@ -17,10 +17,12 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
     throw new Error("Configurações da loja ou integração ausentes.");
   }
 
+  // Correção: Usa o peso real dos itens sem adicionar valores fixos inventados
   const totalWeight = data.items.reduce(
-    (acc: number, i: any) => acc + (Number(i.item_weight) || 0.3) * i.quantity,
-    0.1,
+    (acc: number, i: any) => acc + (Number(i.item_weight) || 0) * i.quantity,
+    0,
   );
+  
   const totalValue = data.items.reduce(
     (acc: number, i: any) => acc + (Number(i.unit_price) || 0) * i.quantity,
     0,
@@ -52,17 +54,18 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
       quantity: Number(i.quantity),
       unitary_value: Number(i.unit_price),
     })),
+    // Correção: Usa estritamente as dimensões reais cadastradas no produto
     volumes: [
       {
-        height: Number(data.items[0]?.item_height || 10),
-        width: Number(data.items[0]?.item_width || 10),
-        length: Number(data.items[0]?.item_length || 10),
-        weight: totalWeight,
+        height: Number(data.items[0]?.item_height) || 10,
+        width: Number(data.items[0]?.item_width) || 10,
+        length: Number(data.items[0]?.item_length) || 10,
+        weight: totalWeight > 0 ? totalWeight : 0.1,
       },
     ],
     options: {
       insurance_value: totalValue,
-      receipt: true,
+      receipt: false, // Alterado para false para evitar o custo extra indesejado de A.R.
       own_hand: false,
       collect: false,
       tags: [`ORDER-${data.orderId}`],
@@ -99,11 +102,9 @@ export async function enviarParaCarrinhoMelhorEnvio(data: any) {
   }
 
   // ATUALIZAÇÃO CRÍTICA: Salvando o protocol para garantir a vinculação no Webhook
-  // Certifique-se de que a coluna 'melhor_envio_protocol' existe na tabela 'orders'
   const { error: updateError } = await supabase
     .from("orders")
     .update({ 
-      status: "preparando",
       melhor_envio_protocol: result.protocol 
     })
     .eq("id", data.orderId);

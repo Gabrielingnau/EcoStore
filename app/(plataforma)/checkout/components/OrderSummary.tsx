@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { formatBRL } from "@/lib/utils";
 
@@ -12,57 +11,168 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ items, shipping, total }: OrderSummaryProps) {
-  return (
-    <Card className="border border-border shadow-md">
-      <CardContent className="p-6 space-y-4">
-        <h3 className="font-bold text-lg">Resumo da compra</h3>
+  const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
 
-        <div className="space-y-4">
-          {items.map((item) => (
-            <div key={item.product.id} className="flex items-center gap-4">
-              <div className="w-16 h-16 relative rounded-md overflow-hidden bg-muted">
-                <Image
-                  src={item.product.imagem_url}
-                  alt={item.product.nome}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
-              </div>
-              <div className="flex-1 text-sm">
-                <p className="font-medium">{item.product.nome}</p>
-                <p className="text-muted-foreground">
-                  {item.quantity}x {formatBRL(item.product.preco)}
-                </p>
-              </div>
-              <span className="font-bold">
-                {formatBRL(item.product.preco * item.quantity)}
-              </span>
-            </div>
-          ))}
+  // Cálculos consolidados usando preco_promocional (preço cheio fica em 'preco' e o promocional em 'preco_promocional')
+  const { originalSubtotal, currentSubtotal, totalEconomy } = items.reduce(
+    (acc, i) => {
+      const regularPrice = Number(i.product.preco) || 0;
+      const promoPrice = i.product.preco_promocional ? Number(i.product.preco_promocional) : regularPrice;
+      
+      // Se tiver preço promocional válido menor que o preço normal, ele usa o promocional
+      const effectivePrice = promoPrice > 0 && promoPrice < regularPrice ? promoPrice : regularPrice;
+
+      acc.originalSubtotal += regularPrice * i.quantity;
+      acc.currentSubtotal += effectivePrice * i.quantity;
+      acc.totalEconomy += (regularPrice - effectivePrice) * i.quantity;
+
+      return acc;
+    },
+    { originalSubtotal: 0, currentSubtotal: 0, totalEconomy: 0 }
+  );
+
+  const shippingPrice = shipping ? Number(shipping.price) : 0;
+  const originalShippingPrice = shipping?.original_price ? Number(shipping.original_price) : 0;
+  const shippingEconomy = originalShippingPrice > shippingPrice ? originalShippingPrice - shippingPrice : 0;
+  
+  const finalEconomy = totalEconomy + shippingEconomy;
+
+  return (
+    <Card className="border border-border/80 shadow-md rounded-2xl bg-card overflow-hidden">
+      <CardContent className="p-5 md:p-6 space-y-5">
+        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+          <h3 className="font-bold text-base text-foreground">Resumo da compra</h3>
+          <span className="text-xs font-semibold text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
+            {totalQty} {totalQty === 1 ? "item" : "itens"}
+          </span>
         </div>
 
-        <div className="border-t pt-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>
-              {shipping
-                ? shipping.type === "pickup" ||
-                  shipping.type === "local_delivery"
-                  ? `Frete (Entrega Local)`
-                  : `Frete (${shipping.company?.name || "Transportadora"} - ${shipping.name})`
-                : "Calculando..."}
-            </span>
-            <span className="font-medium">
-              {shipping
-                ? Number(shipping.price) === 0
-                  ? "Grátis"
-                  : formatBRL(Number(shipping.price))
-                : "Calculando..."}
-            </span>
+        {/* Lista de Produtos */}
+        <div className="space-y-3.5 max-h-[340px] overflow-y-auto pr-1">
+          {items.map((item, index) => {
+            const regularPrice = Number(item.product.preco) || 0;
+            const promoPrice = item.product.preco_promocional ? Number(item.product.preco_promocional) : 0;
+            const hasDiscount = promoPrice > 0 && promoPrice < regularPrice;
+            const finalItemPrice = hasDiscount ? promoPrice : regularPrice;
+
+            return (
+              <div 
+                key={`${item.product.id}-${item.product.variant_size_id || index}`} 
+                className="flex items-start gap-3.5 pb-3 border-b border-border/40 last:border-0 last:pb-0"
+              >
+                <div className="w-16 h-16 relative rounded-xl overflow-hidden bg-muted shrink-0 border border-border/40">
+                  <Image
+                    src={item.product.imagem_url}
+                    alt={item.product.nome}
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
+                </div>
+                <div className="flex-1 min-w-0 text-xs space-y-1">
+                  <p className="font-semibold text-foreground truncate">{item.product.nome}</p>
+                  
+                  {/* Exibição da Cor e Tamanho da Variante */}
+                  {(item.product.cor || item.product.tamanho) && (
+                    <p className="text-primary font-medium">
+                      {item.product.cor ? `Cor: ${item.product.cor}` : ""}
+                      {item.product.cor && item.product.tamanho ? " • " : ""}
+                      {item.product.tamanho ? `Tamanho: ${item.product.tamanho}` : ""}
+                    </p>
+                  )}
+
+                  <div className="flex justify-between items-center pt-0.5">
+                    <span className="text-muted-foreground">
+                      {item.quantity}x{" "}
+                      {hasDiscount && (
+                        <span className="line-through mr-1 text-[10px]">
+                          {formatBRL(regularPrice)}
+                        </span>
+                      )}
+                      <span className={hasDiscount ? "font-bold text-foreground" : ""}>
+                        {formatBRL(finalItemPrice)}
+                      </span>
+                    </span>
+                    <span className="font-bold text-foreground">
+                      {formatBRL(finalItemPrice * item.quantity)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Totais e Frete */}
+        <div className="border-t border-border/60 pt-4 space-y-2.5 text-xs md:text-sm">
+          {/* Subtotal */}
+          <div className="flex justify-between text-muted-foreground items-center">
+            <span>Produtos ({totalQty})</span>
+            <div className="text-right">
+              {originalSubtotal > currentSubtotal && (
+                <span className="line-through text-xs text-muted-foreground mr-2">
+                  {formatBRL(originalSubtotal)}
+                </span>
+              )}
+              <span className="font-medium text-foreground">
+                {formatBRL(currentSubtotal)}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between font-bold text-xl pt-2 border-t text-primary">
-            <span>Total</span>
-            <span>{formatBRL(total)}</span>
+
+          {/* Frete */}
+          <div className="flex justify-between text-muted-foreground items-center">
+            <span>Envios</span>
+            <div className="text-right">
+              {shipping ? (
+                Number(shipping.price) === 0 ? (
+                  <div className="flex items-center gap-1.5 justify-end">
+                    {originalShippingPrice > 0 && (
+                      <span className="line-through text-xs text-muted-foreground">
+                        {formatBRL(originalShippingPrice)}
+                      </span>
+                    )}
+                    <span className="text-emerald-600 font-bold uppercase text-xs">
+                      Grátis
+                    </span>
+                  </div>
+                ) : (
+                  <span className="font-medium text-foreground">
+                    {formatBRL(Number(shipping.price))}
+                  </span>
+                )
+              ) : (
+                "A calcular"
+              )}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="pt-3 border-t border-border/60 space-y-1">
+            <div className="flex justify-between font-black text-lg md:text-xl text-primary items-center">
+              <span>Total</span>
+              <div className="text-right flex flex-col items-end">
+                {originalSubtotal + originalShippingPrice > total && (
+                  <span className="line-through text-xs text-muted-foreground font-normal">
+                    {formatBRL(originalSubtotal + originalShippingPrice)}
+                  </span>
+                )}
+                <span>{formatBRL(total)}</span>
+              </div>
+            </div>
+
+            {/* Badge de Economia Total Estilo Mercado Livre */}
+            {finalEconomy > 0 && (
+              <div className="flex items-center justify-end gap-2 pt-1 text-xs font-semibold text-emerald-600">
+                <span>Economize {formatBRL(finalEconomy)}</span>
+                {Number(shipping?.price) === 0 && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span>Frete grátis</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

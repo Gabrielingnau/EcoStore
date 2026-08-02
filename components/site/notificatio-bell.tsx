@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Loader2, X } from "lucide-react";
+import { Bell, Loader2, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -43,10 +43,20 @@ export function NotificationBell({ userId }: { userId?: string }) {
     },
   });
 
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      if (!userId) return;
+      await supabaseBrowser().from("notifications").delete().eq("user_id", userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+      toast.success("Todas as notificações foram limpas");
+    },
+  });
+
   useEffect(() => {
     if (!userId) return;
 
-    // Solicita permissão ao carregar o componente se ainda não tiver
     if (
       Notification.permission !== "granted" &&
       Notification.permission !== "denied"
@@ -67,19 +77,16 @@ export function NotificationBell({ userId }: { userId?: string }) {
         (payload) => {
           const newNotification = payload.new;
 
-          // 1. Atualiza o React Query
           queryClient.invalidateQueries({
             queryKey: ["notifications", userId],
           });
 
-          // 2. Dispara o toast do site
           toast.info(newNotification.title || "Nova notificação!");
 
-          // 3. Dispara a notificação do Sistema Operacional (Celular/Desktop)
           if (Notification.permission === "granted") {
             new Notification(newNotification.title || "EcoStore", {
               body: newNotification.message,
-              icon: "/icon-192.png", // Coloque o caminho do seu ícone na pasta public
+              icon: "/icon-192.png",
             });
           }
         },
@@ -96,7 +103,9 @@ export function NotificationBell({ userId }: { userId?: string }) {
       <PopoverTrigger className="relative h-10 w-10 rounded-xl hover:bg-secondary transition-all flex items-center justify-center">
         <Bell className="h-5 w-5" />
         {notifications.length > 0 && (
-          <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-background" />
+          <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-background">
+            {notifications.length > 99 ? "99+" : notifications.length}
+          </span>
         )}
       </PopoverTrigger>
 
@@ -111,31 +120,30 @@ export function NotificationBell({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* ScrollArea melhorado */}
         <ScrollArea className="max-h-75">
           <div className="flex flex-col overflow-auto max-h-75">
             {notifications.length > 0 ? (
               notifications.map((n: any) => (
                 <div
                   key={n.id}
-                  className="group relative flex flex-col gap-0.5 p-4 border-b hover:bg-secondary/50 transition-colors"
+                  className="relative flex flex-col gap-0.5 p-4 pr-10 border-b hover:bg-secondary/50 transition-colors"
                 >
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       deleteMutation.mutate(n.id);
                     }}
-                    className="absolute top-3 right-3 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                    className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                    title="Excluir notificação"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" />
                   </button>
-                  <Link href={n.link || "#"} className="block pr-6">
+                  <Link href={n.link || "#"} className="block">
                     <p className="text-sm font-semibold leading-none">
                       {n.title}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-line leading-relaxed">
                       {n.message.replace(/R\$ \d+\.\d{2}/, (match: any) => {
-                        // Extrai o valor do texto, converte para número e formata
                         const val = parseFloat(match.replace("R$ ", ""));
                         return formatBRL(val);
                       })}
@@ -150,6 +158,23 @@ export function NotificationBell({ userId }: { userId?: string }) {
             )}
           </div>
         </ScrollArea>
+
+        {notifications.length > 0 && (
+          <div className="p-2 border-t bg-muted/30">
+            <button
+              onClick={() => deleteAllMutation.mutate()}
+              disabled={deleteAllMutation.isPending}
+              className="w-full py-2 px-3 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all flex items-center justify-center gap-2"
+            >
+              {deleteAllMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+              Limpar todas as notificações
+            </button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

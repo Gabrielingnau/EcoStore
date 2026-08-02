@@ -13,9 +13,7 @@ export function BuyNowButton({ product }: { product: any }) {
 
   const handleBuyNow = () => {
     setLoading(true);
-    // 1. Adiciona ao carrinho
     add(product, 1);
-    // 2. Redireciona para o checkout
     router.push("/checkout");
   };
 
@@ -23,9 +21,9 @@ export function BuyNowButton({ product }: { product: any }) {
     <Button 
       onClick={handleBuyNow}
       disabled={product.estoque <= 0 || loading}
-      className="w-full h-12 text-base font-bold bg-secondary text-secondary-foreground hover:bg-secondary/90"
+      className="w-full h-12 text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
     >
-      {loading ? <Loader2 className="animate-spin" /> : "Comprar agora"}
+      {loading ? <Loader2 className="animate-spin h-4 w-4" /> : "Comprar agora"}
     </Button>
   );
 }

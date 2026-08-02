@@ -1,11 +1,8 @@
 "use server";
 
 import { stripe } from "@/lib/stripe/server";
-import { supabaseServer } from "@/lib/supabase/server";
 
 export async function createCheckoutSession(payload: any) {
-  const supabase = await supabaseServer();
-
   console.log("Dados recebidos no Checkout:", JSON.stringify(payload, null, 2));
 
   // 1. Identificação precisa do tipo de entrega
@@ -18,18 +15,26 @@ export async function createCheckoutSession(payload: any) {
   let shippingType = "melhor_envio";
 
   if (isPickup) {
-    status = "pronto para retirada"; // Status específico para retirada
+    status = "pronto para retirada";
     shippingType = "retirada";
   } else if (isLocalDelivery) {
-    status = "preparando entrega"; // Status específico para entrega própria
+    status = "preparando entrega";
     shippingType = "entrega_propria";
   }
 
-  // Cálculos de total, peso e data
-  const totalItens = payload.items.reduce(
-    (acc: number, i: any) => acc + i.product.preco * i.quantity,
-    0,
-  );
+  // Função auxiliar para calcular o preço efetivo (considerando o preço promocional)
+  const getEffectivePrice = (product: any) => {
+    const regularPrice = Number(product.preco) || 0;
+    const promoPrice = product.preco_promocional ? Number(product.preco_promocional) : 0;
+    return promoPrice > 0 && promoPrice < regularPrice ? promoPrice : regularPrice;
+  };
+
+  // Cálculos de total, peso e data considerando o preço promocional
+  const totalItens = payload.items.reduce((acc: number, i: any) => {
+    const price = getEffectivePrice(i.product);
+    return acc + price * i.quantity;
+  }, 0);
+  
   const total = totalItens + Number(payload.shipping.price);
 
   const calculatedWeight =
@@ -51,77 +56,65 @@ export async function createCheckoutSession(payload: any) {
     Date.now() + days * 24 * 60 * 60 * 1000,
   );
 
-  // 3. Salvando o pedido
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      user_id: payload.user.id,
-      total: total,
-      status: status, // "pronto para retirada", "preparando entrega" ou "pendente"
-      shipping_type: shippingType, // "retirada", "entrega própria" ou "melhor envio"
-      tracking_code:
-        isPickup || isLocalDelivery
-          ? "Não rastreável"
-          : payload.shipping.tracking_code || null,
-      shipping_name: payload.user.name,
-      shipping_address: payload.user.address,
-      shipping_city: payload.user.city,
-      shipping_state: payload.user.state,
-      shipping_zip: payload.user.zip,
-      shipping_phone: payload.user.phone,
-      shipping_email: payload.user.email,
-      shipping_document: payload.user.document,
-      shipping_cost: Number(payload.shipping.price),
-      shipping_service_id: String(payload.shipping.id),
-      shipping_company_name: isBetterShipping
-        ? payload.shipping.company.name
-        : payload.shipping.name,
-      total_weight: calculatedWeight,
-      estimated_delivery: calculatedDeliveryDate.toISOString(),
-    })
-    .select("id")
-    .single();
-
-  if (orderError) {
-    console.error("Erro ao salvar pedido no Supabase:", orderError);
-    throw new Error("Erro ao criar pedido: " + orderError.message);
-  }
-
-  // Salva itens
-  const itemsToInsert = payload.items.map((i: any) => ({
-    order_id: order.id,
-    product_id: i.product.id,
-    product_name: i.product.nome,
-    product_image: i.product.imagem_url,
-    unit_price: i.product.preco,
-    quantity: i.quantity,
-    item_weight: i.product.weight || 0,
-    item_width: i.product.width || 0,
-    item_height: i.product.height || 0,
-    item_length: i.product.length || 0,
-  }));
-
-  await supabase.from("order_items").insert(itemsToInsert);
-
-  // 4. Criação no Stripe
   const shippingName = isBetterShipping
     ? payload.shipping.company.name
     : payload.shipping.name;
 
+  console.log("Calculado total do checkout:", total, "Peso total:", calculatedWeight);
+
+  // 3. Formato enxuto dos itens
+  const minimalItemsData = payload.items.map((i: any) => ({
+    id: i.product.id,
+    q: i.quantity,
+    p: getEffectivePrice(i.product),
+    sz: i.product.variant_size_id || null,
+  }));
+
+  // Montando o metadata base
+  const metadata: Record<string, string> = {
+    userId: payload.user.id || "",
+    total: total.toString(),
+    status: status,
+    shippingType: shippingType,
+    calculatedWeight: calculatedWeight.toString(),
+    calculatedDeliveryDate: calculatedDeliveryDate.toISOString(),
+    userData: JSON.stringify(payload.user),
+    shippingData: JSON.stringify({
+      id: payload.shipping.id,
+      name: payload.shipping.name,
+      price: payload.shipping.price,
+      company: payload.shipping.company?.name || "",
+      delivery_time: payload.shipping.delivery_time,
+    }),
+  };
+
+  // Fatiamento dinâmico em blocos de até 3 itens por chave para nunca estourar 500 caracteres
+  const chunkSize = 3;
+  let chunkCount = 0;
+  for (let i = 0; i < minimalItemsData.length; i += chunkSize) {
+    chunkCount++;
+    const chunk = minimalItemsData.slice(i, i + chunkSize);
+    metadata[`itemsData_${chunkCount}`] = JSON.stringify(chunk);
+  }
+  metadata.itemsChunksCount = chunkCount.toString();
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
-      ...payload.items.map((item: any) => ({
-        price_data: {
-          currency: "brl",
-          product_data: {
-            name: item.product.nome,
-            images: [item.product.imagem_url],
+      ...payload.items.map((item: any) => {
+        const effectivePrice = getEffectivePrice(item.product);
+        return {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: item.product.nome,
+              images: [item.product.imagem_url],
+            },
+            unit_amount: Math.round(effectivePrice * 100),
           },
-          unit_amount: Math.round(item.product.preco * 100),
-        },
-        quantity: item.quantity,
-      })),
+          quantity: item.quantity,
+        };
+      }),
       {
         price_data: {
           currency: "brl",
@@ -131,11 +124,13 @@ export async function createCheckoutSession(payload: any) {
         quantity: 1,
       },
     ],
-    metadata: { orderId: order.id },
+    metadata,
     mode: "payment",
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/sucesso/${order.id}`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/sucesso?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
   });
+
+  console.log("Sessão Stripe criada com sucesso ID:", session.id);
 
   return { url: session.url };
 }

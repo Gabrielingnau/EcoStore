@@ -26,7 +26,7 @@ export function ShippingOptions({
         {[1, 2].map((i) => (
           <div
             key={i}
-            className="p-4 border border-border rounded-lg animate-pulse bg-muted/50 h-20"
+            className="p-4 border border-border/60 rounded-2xl animate-pulse bg-secondary/40 h-20"
           />
         ))}
       </div>
@@ -39,12 +39,12 @@ export function ShippingOptions({
 
   if (validOptions.length === 0) {
     return (
-      <div className="p-6 border border-amber-200 rounded-lg text-center space-y-4">
+      <div className="p-6 border border-amber-500/30 bg-amber-500/5 rounded-2xl text-center space-y-4">
         <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
         <div>
-          <p className="font-semibold text-amber-800">Frete indisponível</p>
-          <p className="text-sm text-amber-700">
-            Verifique o CEP ou utilize outro endereço.
+          <p className="font-bold text-foreground">Frete indisponível</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Verifique o CEP cadastrado ou utilize outro endereço.
           </p>
         </div>
         <Button
@@ -56,8 +56,8 @@ export function ShippingOptions({
               <Settings className="w-4 h-4 mr-2" /> Gerenciar endereços
             </Link>
           }
-          className="border-amber-200"
-        ></Button>
+          className="rounded-xl border-amber-500/30 hover:bg-amber-500/10"
+        />
       </div>
     );
   }
@@ -84,10 +84,10 @@ export function ShippingOptions({
           <div
             key={rate.id}
             className={cn(
-              "relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all",
+              "relative flex items-center p-4 border-2 rounded-2xl cursor-pointer transition-all bg-card",
               isSelected
-                ? "border-primary bg-primary/10"
-                : "border-border hover:border-accent hover:bg-accent/50",
+                ? "border-primary bg-primary/5 shadow-sm"
+                : "border-border/60 hover:border-primary/40 hover:bg-secondary/40",
             )}
             onClick={() => onSelect(rate)}
           >
@@ -97,9 +97,9 @@ export function ShippingOptions({
               htmlFor={rate.id}
               className="flex-1 flex justify-between items-center cursor-pointer"
             >
-              <div>
-                <p className="font-semibold text-foreground">{displayName}</p>
-                <p className="text-sm text-muted-foreground font-medium">
+              <div className="space-y-0.5">
+                <p className="font-bold text-sm text-foreground">{displayName}</p>
+                <p className="text-xs text-muted-foreground font-medium">
                   {rate.delivery_time
                     ? `Entrega em até ${typeof rate.delivery_time === "object" ? rate.delivery_time.max : rate.delivery_time} dias úteis`
                     : "Prazo não informado"}
@@ -107,9 +107,9 @@ export function ShippingOptions({
               </div>
 
               <div className="text-right">
-                <p className="font-bold text-foreground">
+                <span className={cn("font-extrabold text-sm", price === 0 ? "text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg" : "text-foreground")}>
                   {price === 0 ? "Grátis" : formatBRL(price)}
-                </p>
+                </span>
               </div>
             </label>
           </div>

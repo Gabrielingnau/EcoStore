@@ -10,7 +10,15 @@ import { formatBRL } from "@/lib/utils";
 export function CartDrawer() {
   const router = useRouter();
   const { items, open, setOpen, updateQty, remove } = useCart();
-  const subtotal = items.reduce((acc, i) => acc + i.product.preco * i.quantity, 0);
+  
+  // Cálculo atualizado considerando o preço promocional (se houver e for menor que o preço normal)
+  const subtotal = items.reduce((acc, i) => {
+    const regularPrice = Number(i.product.preco) || 0;
+    const promoPrice = i.product.preco_promocional ? Number(i.product.preco_promocional) : 0;
+    const effectivePrice = promoPrice > 0 && promoPrice < regularPrice ? promoPrice : regularPrice;
+    return acc + effectivePrice * i.quantity;
+  }, 0);
+
   const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
 
   return (
@@ -60,36 +68,72 @@ export function CartDrawer() {
                   const estoqueDisponivel = item.product.estoque ?? 0;
                   const atingiuLimite = item.quantity >= estoqueDisponivel;
 
+                  const regularPrice = Number(item.product.preco) || 0;
+                  const promoPrice = item.product.preco_promocional ? Number(item.product.preco_promocional) : 0;
+                  const hasDiscount = promoPrice > 0 && promoPrice < regularPrice;
+                  const finalItemPrice = hasDiscount ? promoPrice : regularPrice;
+
                   return (
                     <div
-                      key={item.product.id}
+                      key={`${item.product.id}-${item.product.variant_size_id}`}
                       className="flex gap-4 p-3 rounded-xl bg-secondary"
                     >
-                      <div className="relative h-24 w-20 rounded-lg overflow-hidden bg-muted">
+                      <div className="relative h-24 w-20 rounded-lg overflow-hidden bg-muted shrink-0">
                         <Image src={item.product.imagem_url} alt={item.product.nome} fill sizes="80px" className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
                           <h3 className="font-semibold text-sm text-foreground truncate">{item.product.nome}</h3>
-                          <p className="text-primary font-bold mt-1">{formatBRL(item.product.preco)}</p>
                           
-                          {atingiuLimite && (
-                            <span className="text-[11px] text-destructive font-medium flex items-center gap-1 mt-1 animate-pulse">
-                              <AlertCircle className="h-3 w-3" /> Limite atingido
-                            </span>
+                          {/* Exibição da Cor e Tamanho da Variante */}
+                          {(item.product.cor || item.product.tamanho) && (
+                            <p className="text-xs text-primary font-medium mt-0.5">
+                              {item.product.cor ? `Cor: ${item.product.cor}` : ""}
+                              {item.product.cor && item.product.tamanho ? ", " : ""}
+                              {item.product.tamanho ? `Tamanho: ${item.product.tamanho}` : ""}
+                            </p>
                           )}
+
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {hasDiscount && (
+                              <span className="text-[11px] line-through text-muted-foreground">
+                                {formatBRL(regularPrice)}
+                              </span>
+                            )}
+                            <span className="text-foreground font-bold">{formatBRL(finalItemPrice)}</span>
+                          </div>
+                          
+                          {/* Estoque disponível da variante (Estilo Mercado Livre) */}
+                          <div className="flex items-center gap-2 mt-1">
+                            {estoqueDisponivel <= 5 ? (
+                              <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                                ⚡ ÚLTIMAS {estoqueDisponivel}
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">
+                                +{estoqueDisponivel} disponíveis
+                              </span>
+                            )}
+
+                            {atingiuLimite && (
+                              <span className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" /> Limite atingido
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
+
+                        <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2 bg-background border border-border rounded-lg p-1">
                             <button 
-                              onClick={() => updateQty(item.product.id, item.quantity - 1)} 
+                              onClick={() => updateQty(item.product.id, item.quantity - 1, item.product.variant_size_id)} 
                               className="h-7 w-7 rounded-md hover:bg-accent flex items-center justify-center text-foreground"
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
                             <span className="w-6 text-center text-sm font-semibold text-foreground">{item.quantity}</span>
                             <button 
-                              onClick={() => updateQty(item.product.id, item.quantity + 1)} 
+                              onClick={() => updateQty(item.product.id, item.quantity + 1, item.product.variant_size_id)} 
                               disabled={atingiuLimite}
                               className="h-7 w-7 rounded-md hover:bg-accent flex items-center justify-center text-foreground disabled:opacity-30"
                             >
@@ -97,7 +141,7 @@ export function CartDrawer() {
                             </button>
                           </div>
                           <button 
-                            onClick={() => remove(item.product.id)} 
+                            onClick={() => remove(item.product.id, item.product.variant_size_id)} 
                             className="h-8 w-8 rounded-lg hover:bg-destructive/20 hover:text-destructive text-muted-foreground transition-smooth flex items-center justify-center" 
                             aria-label="Remover"
                           >

@@ -4,7 +4,18 @@ import { FeaturedCarousel } from "@/components/site/featured-carousel";
 import { getHomeContent } from "./hooks/use-home-data";
 
 export async function HomePage() {
-  const { products, featured, currentYear } = await getHomeContent();
+  const { products: rawProducts, featured: rawFeatured, currentYear } = await getHomeContent();
+
+  // Converte explicitamente o null de 'permite_retirada' para boolean (false) para satisfazer o ProductCard
+  const products = rawProducts.map((p) => ({
+    ...p,
+    permite_retirada: Boolean(p.permite_retirada),
+  }));
+
+  const featured = rawFeatured.map((p) => ({
+    ...p,
+    permite_retirada: Boolean(p.permite_retirada),
+  }));
 
   return (
     <div className="md:space-y-24 space-y-16">

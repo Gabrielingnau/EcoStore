@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -10,12 +10,20 @@ import {
 
 import { ProductCard } from "@/components/site/product-card";
 import { Button } from "@/components/ui/button";
-import { revalidateProductFull } from "@/lib/actions/revalidate";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { revalidateProductFull, revalidateProductById, revalidateProductsList } from "@/lib/actions/revalidate";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { ProductRow } from "../types/admin-types";
-import { ProductForm } from "./product-form"; // 👈 Garante que o form está importado
+import { ProductForm } from "./product-form";
 
 type ProductWithAtivo = ProductRow & { ativo?: boolean };
 
@@ -27,19 +35,25 @@ export function ProductsTab({ products }: ProductsTabProps) {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [creating, setCreating] = useState(false);
+  
+  // Estado para controlar o Modal Bonito de Exclusão
+  const [productToDelete, setProductToDelete] = useState<ProductWithAtivo | null>(null);
 
-  // Mutação para Deletar para Sempre (Hard Delete)
+  // Mutação para Deletar para Sempre (Hard Delete) - Revalida Full
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteProductService(id),
     onSuccess: async (_, id) => {
       await revalidateProductFull(id);
       toast.success("Produto removido definitivamente do catálogo.");
       queryClient.invalidateQueries({ queryKey: ["admin-data"] });
+      setProductToDelete(null);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao excluir produto.");
+    },
   });
 
-  // Mutação para Ativar/Desativar (Soft Delete)
+  // Mutação para Ativar/Desativar (Soft Delete) - Revalida apenas product e list
   const toggleActiveMutation = useMutation({
     mutationFn: ({
       id,
@@ -49,7 +63,10 @@ export function ProductsTab({ products }: ProductsTabProps) {
       currentStatus: boolean;
     }) => toggleProductActiveService(id, currentStatus),
     onSuccess: async (_, variables) => {
-      await revalidateProductFull(variables.id);
+      await Promise.all([
+        revalidateProductById(variables.id),
+        revalidateProductsList()
+      ]);
       toast.success(
         variables.currentStatus
           ? "Produto desativado e ocultado da vitrine."
@@ -60,24 +77,13 @@ export function ProductsTab({ products }: ProductsTabProps) {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const handleHardDeleteClick = (
+  const handleOpenDeleteModal = (
     e: React.MouseEvent,
     product: ProductWithAtivo,
   ) => {
     e.stopPropagation();
     e.preventDefault();
-
-    const confirmou = confirm(
-      `⚠️ ALERTA DE EXCLUSÃO DEFINITIVA:\n\n` +
-        `Você está prestes a deletar "${product.nome}" para sempre.\n\n` +
-        `• O produto sumirá do painel.\n` +
-        `• Pedidos antigos NÃO serão quebrados (o ID mudará para nulo no histórico, mas os dados de texto continuam salvos).\n\n` +
-        `Deseja prosseguir?`,
-    );
-
-    if (confirmou) {
-      deleteMutation.mutate(product.id);
-    }
+    setProductToDelete(product);
   };
 
   const handleToggleActiveClick = (
@@ -93,7 +99,7 @@ export function ProductsTab({ products }: ProductsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* 🚀 BLOCO RESTAURADO: Seção de Criação e Edição de Produtos no topo */}
+      {/* Seção de Criação e Edição de Produtos no topo */}
       <div className="space-y-6">
         {!creating && !editing && (
           <Button
@@ -130,62 +136,114 @@ export function ProductsTab({ products }: ProductsTabProps) {
               className={cn("relative", !isAtivo && "opacity-60")}
             >
               <ProductCard
-  product={product as any}
-  isAdmin={true}
-  actions={
-    <div className="flex gap-1.5 w-full pt-1">
-      {/* Botão Editar: Apenas ícone */}
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setEditing(product);
-        }}
-        className="h-8 w-8 p-0 rounded-md bg-secondary/80 hover:bg-secondary transition-all"
-        title="Editar"
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </Button>
+                product={product as any}
+                isAdmin={true}
+                actions={
+                  <div className="flex gap-1.5 w-full pt-1">
+                    {/* Botão Editar */}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setEditing(product);
+                      }}
+                      className="h-8 w-8 p-0 rounded-md bg-secondary/80 hover:bg-secondary transition-all"
+                      title="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
 
-      {/* Botão Ocultar / Mostrar: Apenas ícone */}
-      <Button
-        size="sm"
-        variant={isAtivo ? "outline" : "default"}
-        onClick={(e) => handleToggleActiveClick(e, product)}
-        disabled={toggleActiveMutation.isPending}
-        className="h-8 flex-1 rounded-md text-xs px-2 flex items-center justify-center gap-1.5"
-        title={isAtivo ? "Ocultar" : "Ativar"}
-      >
-        {isAtivo ? (
-          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-        ) : (
-          <Eye className="h-3.5 w-3.5" />
-        )}
-        <span className="hidden sm:inline">
-            {isAtivo ? "Ocultar" : "Ativar"}
-        </span>
-      </Button>
+                    {/* Botão Ocultar / Mostrar */}
+                    <Button
+                      size="sm"
+                      variant={isAtivo ? "outline" : "default"}
+                      onClick={(e) => handleToggleActiveClick(e, product)}
+                      disabled={toggleActiveMutation.isPending}
+                      className="h-8 flex-1 rounded-md text-xs px-2 flex items-center justify-center gap-1.5"
+                      title={isAtivo ? "Ocultar" : "Ativar"}
+                    >
+                      {isAtivo ? (
+                        <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
+                      <span className="hidden sm:inline">
+                          {isAtivo ? "Ocultar" : "Ativar"}
+                      </span>
+                    </Button>
 
-      {/* Botão Excluir Permanente: Apenas ícone */}
-      <Button
-        size="sm"
-        variant="destructive"
-        onClick={(e) => handleHardDeleteClick(e, product)}
-        disabled={deleteMutation.isPending}
-        className="h-8 w-8 rounded-md p-0 flex items-center justify-center shadow-sm shrink-0"
-        title="Excluir"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
-    </div>
-  }
-/>
+                    {/* Botão Excluir Permanente */}
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={(e) => handleOpenDeleteModal(e, product)}
+                      className="h-8 w-8 rounded-md p-0 flex items-center justify-center shadow-sm shrink-0"
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                }
+              />
             </div>
           );
         })}
       </div>
+
+      {/* MODAL BONITO DE EXCLUSÃO DEFINITIVA */}
+      <Dialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">
+              Excluir produto definitivamente?
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm text-muted-foreground space-y-2">
+              <span>
+                Você está prestes a apagar permanentemente o item{" "}
+                <strong className="text-foreground font-semibold">
+                  "{productToDelete?.nome}"
+                </strong>
+                . Esta ação não poderá ser desfeita.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-muted/50 rounded-xl p-3 text-xs text-muted-foreground space-y-1 my-2 border">
+            <p>• O produto será removido da vitrine e do painel.</p>
+            <p>• O histórico de pedidos antigos será preservado com segurança.</p>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setProductToDelete(null)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="flex-1 rounded-xl font-semibold"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (productToDelete) {
+                  deleteMutation.mutate(productToDelete.id);
+                }
+              }}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Sim, excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

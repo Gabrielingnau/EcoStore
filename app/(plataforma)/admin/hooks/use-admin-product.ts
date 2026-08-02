@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { revalidateProductFull } from "@/lib/actions/revalidate";
+import { revalidateProductById, revalidateProductFull, revalidateProductImages, revalidateProductsList, revalidateProductVariants } from "@/lib/actions/revalidate";
 
 import type {
   FormDataState,
@@ -120,7 +120,10 @@ export function useAdminProduct(
       });
     },
     onSuccess: async (finalId: string) => {
-      await revalidateProductFull(finalId);
+      await revalidateProductById(finalId);
+      await revalidateProductImages(finalId);
+      await revalidateProductVariants(finalId);
+      await revalidateProductsList()
       toast.success(
         isEdit ? "Catálogo atualizado com sucesso." : "Novo item registrado com sucesso!"
       );

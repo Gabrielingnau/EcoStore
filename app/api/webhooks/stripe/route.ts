@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio";
-import { revalidateProductById, revalidateProductsList } from "@/lib/actions/revalidate";
+import { revalidateProductFull } from "@/lib/actions/revalidate";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     try {
       console.log("[WEBHOOK STRIPE] Sessão concluída. Extraindo metadados para criação do pedido...");
 
-      // 1. Desserializar os dados salvos no metadata (com suporte completo a chunks)
+      // 1. Desserializar os dados salvos no metadata
       const userData = JSON.parse(metadata.userData || "{}");
       const shippingData = JSON.parse(metadata.shippingData || "{}");
 
@@ -52,7 +52,10 @@ export async function POST(req: Request) {
       const isLocalDelivery = shippingData.id === "local";
       const isBetterShipping = !isPickup && !isLocalDelivery;
 
-      // Status inicial padrão
+      const evaluatedCompanyName = isBetterShipping
+        ? shippingData.company
+        : shippingData.name;
+
       const statusInicial = metadata.status || "Em Preparação";
 
       // 2. Inserir o pedido principal no banco de dados
@@ -77,9 +80,7 @@ export async function POST(req: Request) {
           shipping_document: userData.document,
           shipping_cost: Number(shippingData.price),
           shipping_service_id: String(shippingData.id),
-          shipping_company_name: isBetterShipping
-            ? shippingData.company?.name
-            : shippingData.name,
+          shipping_company_name: evaluatedCompanyName,
           total_weight: Number(metadata.calculatedWeight),
           estimated_delivery: metadata.calculatedDeliveryDate,
           payment_status: "Pago",
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
 
       console.log(`[WEBHOOK STRIPE] Pedido ${order.id} criado com sucesso no banco.`);
 
-      // 3. Buscar dados completos de cada produto no Supabase usando o ID mínimo enviado
+      // 3. Montar itens para salvar em order_items
       const itemsToInsert = [];
       for (const item of minimalItems) {
         const { data: product } = await supabaseAdmin
@@ -109,12 +110,16 @@ export async function POST(req: Request) {
             product_id: product.id,
             product_name: product.nome,
             product_image: product.imagem_url,
-            unit_price: item.p, // Preço efetivo (já com o desconto promocional aplicado no checkout)
+            unit_price: item.p,
             quantity: item.q,
             item_weight: product.weight || 0,
             item_width: product.width || 0,
             item_height: product.height || 0,
             item_length: product.length || 0,
+            variant_id: item.variantId || item.v || null,
+            variant_size_id: item.sizeId || item.sz || null,
+            cor: item.cor || null,
+            tamanho: item.tamanho || item.size || null,
           });
         }
       }
@@ -129,15 +134,17 @@ export async function POST(req: Request) {
         throw new Error("Erro ao salvar itens do pedido");
       }
 
-      // 4. ATUALIZAÇÃO DE ESTOQUE (Suportando variant_sizes e estoque geral)
+      // 4. ATUALIZAÇÃO CORRETA DE ESTOQUE (Variantes -> Recálculo Geral no Product)
       for (const item of minimalItems) {
         if (item.id) {
-          // Atualiza o estoque do tamanho específico (variant_size_id / sz) se houver
-          if (item.sz) {
+          const sizeId = item.sizeId || item.sz;
+
+          // Se o item possui variante/tamanho específico, desconta dele primeiro
+          if (sizeId) {
             const { data: sizeData, error: sizeErr } = await supabaseAdmin
               .from("variant_sizes")
               .select("estoque")
-              .eq("id", item.sz)
+              .eq("id", sizeId)
               .single();
 
             if (!sizeErr && sizeData) {
@@ -145,31 +152,59 @@ export async function POST(req: Request) {
               await supabaseAdmin
                 .from("variant_sizes")
                 .update({ estoque: novoEstoqueTamanho })
-                .eq("id", item.sz);
+                .eq("id", sizeId);
               
-              console.log(`Estoque do tamanho ID ${item.sz} atualizado para ${novoEstoqueTamanho}`);
+              console.log(`Estoque do tamanho ID ${sizeId} atualizado para ${novoEstoqueTamanho}`);
             }
           }
 
-          // Atualiza o estoque geral na tabela products
-          const { data: product, error: prodError } = await supabaseAdmin
-            .from("products")
-            .select("estoque")
-            .eq("id", item.id)
-            .single();
+          // Recarrega todas as variantes deste produto para somar o estoque total real
+          const { data: variantsList } = await supabaseAdmin
+            .from("product_variants")
+            .select(`
+              id,
+              variant_sizes (
+                estoque
+              )
+            `)
+            .eq("product_id", item.id);
 
-          if (!prodError && product) {
-            const novoEstoque = Math.max(0, product.estoque - item.q);
+          if (variantsList && variantsList.length > 0) {
+            let estoqueTotalCalculado = 0;
+            for (const v of variantsList) {
+              if (v.variant_sizes && Array.isArray(v.variant_sizes)) {
+                for (const s of v.variant_sizes) {
+                  estoqueTotalCalculado += Number(s.estoque || 0);
+                }
+              }
+            }
 
+            // Atualiza o estoque geral da tabela products com a soma exata das variantes
             await supabaseAdmin
               .from("products")
-              .update({ estoque: novoEstoque })
+              .update({ estoque: estoqueTotalCalculado })
               .eq("id", item.id);
-            
-            revalidateProductById(item.id);
-            revalidateProductsList();
-            console.log(`Estoque geral do produto ${item.id} atualizado para ${novoEstoque}`);
+
+            console.log(`Estoque geral do produto ${item.id} recalculado e atualizado para ${estoqueTotalCalculado}`);
+          } else {
+            // Caso o produto não use variantes, faz a baixa direta no produto
+            const { data: product } = await supabaseAdmin
+              .from("products")
+              .select("estoque")
+              .eq("id", item.id)
+              .single();
+
+            if (product) {
+              const novoEstoque = Math.max(0, product.estoque - item.q);
+              await supabaseAdmin
+                .from("products")
+                .update({ estoque: novoEstoque })
+                .eq("id", item.id);
+            }
           }
+
+          // Invalida todo o cache deste produto específico e da listagem geral
+          await revalidateProductFull(item.id);
         }
       }
 

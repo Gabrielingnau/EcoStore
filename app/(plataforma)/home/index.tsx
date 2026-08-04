@@ -21,11 +21,14 @@ export async function HomePage() {
       {/* Hero Section */}
       <section className="relative rounded-[2rem] overflow-hidden bg-primary p-10 md:p-16 shadow-2xl">
         <div className="relative z-10 max-w-2xl">
-          {/* CORRIGIDO: Trocado para text-white com font-bold para contraste máximo */}
-          <p className="text-sm uppercase tracking-widest text-white font-bold">
-            Coleção {currentYear}
-          </p>
-          <h1 className="text-4xl md:text-6xl font-black mt-4 leading-tight text-primary-foreground drop-shadow-sm">
+          {/* CORRIGIDO: Badge com fundo escuro e vidro para garantir contraste total em qualquer cor primária */}
+          <div className="inline-block bg-black/40 backdrop-blur-md px-3.5 py-1 rounded-full border border-white/10 mb-3 shadow-sm">
+            <p className="text-xs uppercase tracking-widest text-white font-extrabold">
+              Coleção {currentYear}
+            </p>
+          </div>
+
+          <h1 className="text-4xl md:text-6xl font-black mt-2 leading-tight text-primary-foreground drop-shadow-sm">
             Moda que acende seu estilo
           </h1>
           <Link 

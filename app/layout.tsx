@@ -5,7 +5,7 @@ import { Toaster } from "sonner";
 import { CartDrawer } from "@/components/site/cart-drawer";
 import { WhatsAppFab } from "@/components/site/whatsapp-fab";
 import { cn } from "@/lib/utils";
-import { AuthProvider } from "@/providers/auth-provider"; // <--- Adicione este import
+import { AuthProvider } from "@/providers/auth-provider";
 import QueryProvider from "@/providers/query-provider";
 
 import "./styles/globals.css";
@@ -28,9 +28,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={cn("dark", inter.variable)}>
+      <head>
+        {/* Otimização de LCP: Conecta antecipadamente ao Supabase para carregar imagens e dados mais rápido */}
+        <link rel="preconnect" href="https://trmbmnjpylozykcyxcuc.supabase.co" />
+        <link rel="dns-prefetch" href="https://trmbmnjpylozykcyxcuc.supabase.co" />
+      </head>
       <body className="font-sans antialiased">
         <QueryProvider>
-          {/* O AuthProvider entra aqui, abraçando o restante do app */}
           <AuthProvider>
             <StoreProvider>
               <main className="min-h-[calc(100vh-80px)]">{children}</main>

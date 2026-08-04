@@ -100,8 +100,9 @@ export function ProductCard({
               {formatBRL(precoAtual)}
             </span>
 
+            {/* CORRIGIDO: Usando cores com alto contraste (texto escuro com fundo forte) para passar no Lighthouse */}
             {descontoPercentual > 0 && (
-              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">
                 {descontoPercentual}% OFF
               </span>
             )}

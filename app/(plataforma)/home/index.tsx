@@ -21,8 +21,8 @@ export async function HomePage() {
       {/* Hero Section */}
       <section className="relative rounded-[2rem] overflow-hidden bg-primary p-10 md:p-16 shadow-2xl">
         <div className="relative z-10 max-w-2xl">
-          {/* CORRIGIDO: Removido /80 para melhorar o contraste e passar no teste de acessibilidade */}
-          <p className="text-sm uppercase tracking-widest text-primary-foreground font-semibold">
+          {/* CORRIGIDO: Trocado para text-white com font-bold para contraste máximo */}
+          <p className="text-sm uppercase tracking-widest text-white font-bold">
             Coleção {currentYear}
           </p>
           <h1 className="text-4xl md:text-6xl font-black mt-4 leading-tight text-primary-foreground drop-shadow-sm">

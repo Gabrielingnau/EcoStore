@@ -11,6 +11,7 @@ import type { Product } from "@/lib/types/admin-types";
 import { formatBRL } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, Tag } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 
@@ -36,7 +37,6 @@ export function FeaturedCarousel({
       >
         <CarouselContent>
           {products.map((product, index) => {
-            // Lógica de Preço Promocional e % OFF
             const hasDiscount =
               product.preco_promocional !== null &&
               product.preco_promocional !== undefined &&
@@ -54,6 +54,9 @@ export function FeaturedCarousel({
               ? product.preco_promocional!
               : product.preco;
 
+            // O primeiro item do carrossel é o principal candidato a LCP da página
+            const isLcpCandidate = index === 0;
+
             const SlideContent = (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -62,11 +65,16 @@ export function FeaturedCarousel({
                 viewport={{ once: true }}
                 className="relative aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border shadow-lg group"
               >
-                {/* Imagem de Fundo (Totalmente visível) */}
-                <img
+                {/* Substituído <img> por <Image> do Next.js com otimização */}
+                <Image
                   src={product.imagem_url}
                   alt={product.nome}
-                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  fill
+                  priority={isLcpCandidate}
+                  // @ts-ignore - fetchPriority é suportado nativamente pelo Next.js em versões recentes
+                  fetchPriority={isLcpCandidate ? "high" : "auto"}
+                  sizes="(max-width: 768px) 90vw, 60vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
                 />
 
                 {/* Sombra suave apenas na parte inferior para leitura do texto */}

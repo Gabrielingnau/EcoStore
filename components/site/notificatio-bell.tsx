@@ -100,7 +100,11 @@ export function NotificationBell({ userId }: { userId?: string }) {
 
   return (
     <Popover>
-      <PopoverTrigger className="relative h-10 w-10 rounded-xl hover:bg-secondary transition-all flex items-center justify-center">
+      {/* CORRIGIDO: Adicionado aria-label para o botão de notificações */}
+      <PopoverTrigger 
+        aria-label="Abrir notificações"
+        className="relative h-10 w-10 rounded-xl hover:bg-secondary transition-all flex items-center justify-center"
+      >
         <Bell className="h-5 w-5" />
         {notifications.length > 0 && (
           <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-background">
@@ -133,6 +137,7 @@ export function NotificationBell({ userId }: { userId?: string }) {
                       e.preventDefault();
                       deleteMutation.mutate(n.id);
                     }}
+                    aria-label="Excluir notificação"
                     className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
                     title="Excluir notificação"
                   >

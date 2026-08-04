@@ -10,10 +10,7 @@ export const getAllProducts = unstable_cache(
 
     const { data, error } = await supabase
       .from("products")
-      .select(
-        "*"
-      )
-      // 🔴 O FILTRO DA VITRINE: Garante que os clientes só vejam os produtos ativos
+      .select("*")
       .eq("ativo", true)
       .order("created_at", { ascending: false });
 
@@ -26,5 +23,6 @@ export const getAllProducts = unstable_cache(
   ["products-list"],
   {
     tags: ["products"],
+    revalidate: 3600, // Reforça o tempo de revalidação do cache do Next.js
   },
 );

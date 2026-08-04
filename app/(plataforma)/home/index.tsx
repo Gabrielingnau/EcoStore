@@ -6,7 +6,6 @@ import { getHomeContent } from "./hooks/use-home-data";
 export async function HomePage() {
   const { products: rawProducts, featured: rawFeatured, currentYear } = await getHomeContent();
 
-  // Converte explicitamente o null de 'permite_retirada' para boolean (false) para satisfazer o ProductCard
   const products = rawProducts.map((p) => ({
     ...p,
     permite_retirada: Boolean(p.permite_retirada),
@@ -22,7 +21,8 @@ export async function HomePage() {
       {/* Hero Section */}
       <section className="relative rounded-[2rem] overflow-hidden bg-primary p-10 md:p-16 shadow-2xl">
         <div className="relative z-10 max-w-2xl">
-          <p className="text-sm uppercase tracking-widest text-primary-foreground/80 font-bold">
+          {/* CORRIGIDO: Removido /80 para melhorar o contraste e passar no teste de acessibilidade */}
+          <p className="text-sm uppercase tracking-widest text-primary-foreground font-semibold">
             Coleção {currentYear}
           </p>
           <h1 className="text-4xl md:text-6xl font-black mt-4 leading-tight text-primary-foreground drop-shadow-sm">
@@ -36,7 +36,6 @@ export async function HomePage() {
           </Link>
         </div>
         
-        {/* Detalhe decorativo que remete ao Primary Glow do seu CSS */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-glow/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
       </section>
 

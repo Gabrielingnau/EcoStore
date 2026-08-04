@@ -21,11 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useAuth } from "@/hooks/use-auth";
 import { useStore } from "@/hooks/use-store";
 import { useCart, useCartCount } from "@/lib/store/cart";
@@ -85,6 +80,7 @@ export function SiteHeader() {
                 <div className="hidden md:flex items-center gap-2">
                   <Link
                     href="/configuracoes"
+                    aria-label="Configurações"
                     className={`h-10 w-10 rounded-xl flex items-center justify-center ${pathname === "/configuracoes" ? "bg-accent" : "hover:bg-accent"}`}
                   >
                     <Settings className="h-5 w-5" />
@@ -101,18 +97,21 @@ export function SiteHeader() {
               <div className="hidden md:flex items-center gap-2">
                 <Link
                   href="/endereco"
+                  aria-label="Endereços"
                   className={`h-10 w-10 rounded-xl flex items-center justify-center ${pathname === "/endereco" ? "bg-accent" : "bg-secondary hover:bg-accent"}`}
                 >
                   <MapPin className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/perfil"
+                  aria-label="Meu Perfil"
                   className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent flex items-center justify-center"
                 >
                   <UserIcon className="h-5 w-5" />
                 </Link>
                 <button
                   onClick={handleLogout}
+                  aria-label="Encerrar sessão"
                   className="h-10 w-10 rounded-xl bg-secondary hover:bg-accent flex items-center justify-center"
                 >
                   <LogOut className="h-5 w-5" />
@@ -122,7 +121,10 @@ export function SiteHeader() {
               {/* --- MODO CELULAR: Dropdown único --- */}
               <div className="md:hidden">
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="h-10 w-auto px-2 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center gap-1">
+                  <DropdownMenuTrigger 
+                    aria-label="Menu do usuário"
+                    className="h-10 w-auto px-2 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center gap-1"
+                  >
                     <UserIcon className="h-5 w-5" />
                     <ChevronDown className="h-3 w-3 opacity-60" />
                   </DropdownMenuTrigger>
@@ -166,8 +168,10 @@ export function SiteHeader() {
             </Link>
           )}
 
+          {/* CORRIGIDO: Adicionado aria-label para o botão do carrinho */}
           <button
             onClick={() => setOpen(true)}
+            aria-label="Abrir carrinho de compras"
             className="relative h-10 w-10 rounded-xl bg-secondary hover:bg-accent transition-smooth flex items-center justify-center"
           >
             <ShoppingBag className="h-5 w-5" />

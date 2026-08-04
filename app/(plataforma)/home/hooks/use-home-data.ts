@@ -4,7 +4,6 @@ export async function getHomeContent() {
   try {
     const products = await getAllProducts();
     
-    // Separação lógica: Produtos em Destaque vs Todos
     const featured = products.filter((p) => p.destaque);
     const currentYear = new Date().getFullYear();
 

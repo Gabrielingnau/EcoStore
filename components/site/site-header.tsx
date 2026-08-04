@@ -61,8 +61,10 @@ export function SiteHeader() {
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* CORRIGIDO: Adicionado aria-label para leitores de tela em modo mobile onde o texto fica oculto */}
           <Link
             href="/contato"
+            aria-label="Contato"
             className="h-10 w-10 sm:w-auto sm:px-4 rounded-xl hover:bg-secondary transition-smooth flex items-center justify-center gap-2 font-medium text-sm"
           >
             <Phone className="h-4 w-4" />
@@ -168,7 +170,6 @@ export function SiteHeader() {
             </Link>
           )}
 
-          {/* CORRIGIDO: Adicionado aria-label para o botão do carrinho */}
           <button
             onClick={() => setOpen(true)}
             aria-label="Abrir carrinho de compras"

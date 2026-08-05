@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { maskPhone } from "@/lib/utils"; // Importação da máscara
+import { maskPhone } from "@/lib/utils";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation } from "@tanstack/react-query";
 
@@ -19,7 +19,6 @@ import { SignupFormData, signupSchema } from "./types/auth";
 export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
 
-  // Dentro do seu SignupForm
   const {
     register,
     handleSubmit,
@@ -40,7 +39,6 @@ export default function SignupForm() {
     },
   });
 
-  // Função para lidar com a máscara e atualizar o estado do hook-form
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const maskedValue = maskPhone(e.target.value);
     setValue("phone", maskedValue, { shouldValidate: true });
@@ -145,7 +143,8 @@ export default function SignupForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground"
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              className="absolute top-1/2 right-2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-lg"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -159,7 +158,7 @@ export default function SignupForm() {
 
         <Button
           type="submit"
-          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95"
+          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 text-primary-foreground bg-primary hover:opacity-90"
           disabled={mutation.isPending}
         >
           {mutation.isPending ? (

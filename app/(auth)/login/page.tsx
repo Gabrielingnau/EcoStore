@@ -60,7 +60,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={togglePassword}
-              className="absolute top-1/2 right-4 -translate-y-1/2 text-muted-foreground"
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              className="absolute top-1/2 right-2 -translate-y-1/2 h-10 w-10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-lg"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -68,7 +69,11 @@ export default function LoginPage() {
           {errors.password && <p className="text-xs font-bold text-destructive">{errors.password.message}</p>}
         </div>
 
-        <Button type="submit" className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95" disabled={isPending}>
+        <Button 
+          type="submit" 
+          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 text-primary-foreground bg-primary hover:opacity-90" 
+          disabled={isPending}
+        >
           {isPending ? <Loader2 className="animate-spin mr-2" /> : "Entrar agora"}
         </Button>
       </form>

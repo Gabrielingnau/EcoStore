@@ -111,9 +111,9 @@ function OrderCard({
         <div className="flex justify-between items-start mb-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-bold tracking-tight">
+              <span className="text-sm font-bold tracking-tight">
                 #{order.id.slice(0, 8)}
-              </h3>
+              </span>
               <Badge
                 className={`text-[8px] uppercase ${isPickup ? "bg-purple-600 text-white" : isLocal ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"}`}
               >

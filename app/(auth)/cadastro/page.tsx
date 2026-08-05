@@ -158,7 +158,7 @@ export default function SignupForm() {
 
         <Button
           type="submit"
-          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 text-primary-foreground bg-primary hover:opacity-90"
+          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 bg-white text-black hover:bg-white/90"
           disabled={mutation.isPending}
         >
           {mutation.isPending ? (

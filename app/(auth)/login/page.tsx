@@ -71,7 +71,7 @@ export default function LoginPage() {
 
         <Button 
           type="submit" 
-          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 text-primary-foreground bg-primary hover:opacity-90" 
+          className="h-12 w-full font-bold rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-95 bg-primary text-white hover:bg-primary/90" 
           disabled={isPending}
         >
           {isPending ? <Loader2 className="animate-spin mr-2" /> : "Entrar agora"}

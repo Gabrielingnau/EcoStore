@@ -23,7 +23,6 @@ export default function AddressPage() {
 
   const isFromCheckout = searchParams.get("redirect") === "checkout";
 
-  // Incluindo a função 'update' que adicionamos no hook
   const { addresses, save, update, deleteAddress, activateAddress, isPending } =
     useAddress(user?.id || "");
 
@@ -88,7 +87,6 @@ export default function AddressPage() {
     form.setValue("street", addr.street);
     form.setValue("city", addr.city);
     form.setValue("state", addr.state);
-    // Adicione esta linha para preservar o status de "principal"
     form.setValue("active", addr.active);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -150,7 +148,7 @@ export default function AddressPage() {
                         setEditingId(null);
                         form.reset();
                       }}
-                      className="w-full mt-6 bg-secondary py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
+                      className="w-full mt-6 bg-secondary text-secondary-foreground py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
                     >
                       Cancelar
                     </button>
@@ -158,7 +156,7 @@ export default function AddressPage() {
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="w-full mt-6 bg-primary text-primary-foreground py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
+                    className="w-full mt-6 bg-primary text-white py-3 rounded-xl font-bold transition-opacity hover:opacity-90"
                   >
                     {isPending
                       ? "Salvando..."
@@ -199,9 +197,10 @@ export default function AddressPage() {
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground">
+                        {/* Alterado de h3 para h4 para manter a hierarquia de títulos correta */}
+                        <h4 className="font-semibold text-foreground">
                           {addr.street}
-                        </h3>
+                        </h4>
                         {addr.active && (
                           <span className="text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                             Principal
@@ -217,14 +216,18 @@ export default function AddressPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <button
+                        type="button"
                         onClick={() => handleEdit(addr)}
-                        className="text-muted-foreground hover:text-primary transition-colors"
+                        aria-label={`Editar endereço ${addr.street}`}
+                        className="text-muted-foreground hover:text-primary transition-colors p-1"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => setDeleteId(addr.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label={`Excluir endereço ${addr.street}`}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

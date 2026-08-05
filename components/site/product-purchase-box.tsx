@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/store/cart";
 import { formatBRL } from "@/lib/utils";
+import Image from "next/image";
 
 export function ProductPurchaseBox({
   product,
@@ -43,7 +44,8 @@ export function ProductPurchaseBox({
   // Sempre seleciona o primeiro tamanho disponível por padrão ao mudar de variante ou carregar
   useEffect(() => {
     if (currentSizes.length > 0) {
-      const primeiroDisponivel = currentSizes.find((s: any) => s.estoque > 0) || currentSizes[0];
+      const primeiroDisponivel =
+        currentSizes.find((s: any) => s.estoque > 0) || currentSizes[0];
       if (primeiroDisponivel) {
         setSelectedSizeId(primeiroDisponivel.id);
       }
@@ -201,11 +203,15 @@ export function ProductPurchaseBox({
                   }`}
                 >
                   {variantImages[0] && (
-                    <img
-                      src={variantImages[0]}
-                      alt={v.cor}
-                      className="w-8 h-8 rounded-md object-cover"
-                    />
+                    <div className="relative w-8 h-8 rounded-md overflow-hidden border border-border">
+                      <Image
+                        src={variantImages[0]}
+                        alt={v.cor || "Cor variante"}
+                        fill
+                        sizes="32px"
+                        className="object-cover"
+                      />
+                    </div>
                   )}
                   <span className="text-xs font-medium px-1">{v.cor}</span>
                 </button>
@@ -304,17 +310,28 @@ export function ProductPurchaseBox({
 
         <div className="space-y-3 text-xs text-muted-foreground">
           <div>
-            <span className="block font-medium text-foreground mb-0.5">Cartão de Crédito</span>
-            <p className="text-[11px]">Parcelamento em até {parcelasMax}x sem juros (Visa, Mastercard, American Express, Elo, Hipercard)</p>
+            <span className="block font-medium text-foreground mb-0.5">
+              Cartão de Crédito
+            </span>
+            <p className="text-[11px]">
+              Parcelamento em até {parcelasMax}x sem juros (Visa, Mastercard,
+              American Express, Elo, Hipercard)
+            </p>
           </div>
 
           <div>
-            <span className="block font-medium text-foreground mb-0.5">Pix</span>
-            <p className="text-[11px] text-emerald-600 font-semibold">Aprovação imediata com desconto</p>
+            <span className="block font-medium text-foreground mb-0.5">
+              Pix
+            </span>
+            <p className="text-[11px] text-emerald-600 font-semibold">
+              Aprovação imediata com desconto
+            </p>
           </div>
 
           <div>
-            <span className="block font-medium text-foreground mb-0.5">Boleto Bancário</span>
+            <span className="block font-medium text-foreground mb-0.5">
+              Boleto Bancário
+            </span>
             <p className="text-[11px]">Vencimento em até 1 dia útil</p>
           </div>
         </div>
@@ -333,10 +350,12 @@ export function ProductPurchaseBox({
             </DialogHeader>
             <div className="space-y-3 pt-2 text-sm text-muted-foreground">
               <p>
-                Aceitamos saldo em conta, transferências bancárias, cartões virtuais e pagamento em lotéricas.
+                Aceitamos saldo em conta, transferências bancárias, cartões
+                virtuais e pagamento em lotéricas.
               </p>
               <p className="text-xs bg-secondary p-3 rounded-lg text-foreground">
-                Todas as transações são criptografadas e processadas com total segurança.
+                Todas as transações são criptografadas e processadas com total
+                segurança.
               </p>
             </div>
           </DialogContent>

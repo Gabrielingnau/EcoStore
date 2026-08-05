@@ -3,6 +3,7 @@
 import { ProductPurchaseBox } from "@/components/site/product-purchase-box";
 import { ProductReviews } from "@/components/site/product-reviews";
 import { cn } from "@/lib/utils";
+import Image from "next/image"; // <--- Importar o Image do Next.js
 import { useMemo, useState } from "react";
 
 export function ProductMainLayout({
@@ -19,11 +20,10 @@ export function ProductMainLayout({
     principalVariant?.id || null,
   );
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  console.log("ProductMainLayout product:", product); // Adicione este log para depuração
+
   const currentVariant =
     variants.find((v) => v.id === selectedVariantId) || principalVariant;
 
-  // Imagens exclusivas da variante selecionada (ou fallback para a imagem principal do produto)
   const currentImages = useMemo(() => {
     const variantImgs = Array.isArray(currentVariant?.imagens)
       ? (currentVariant.imagens as string[])
@@ -32,7 +32,7 @@ export function ProductMainLayout({
     return [product.imagem_url].filter(Boolean);
   }, [currentVariant, product.imagem_url]);
 
-  // Características consolidadas
+  // Características consolidadas...
   const coresDisponiveis = Array.from(
     new Set(variants.map((v: any) => v.cor).filter(Boolean)),
   ).join(", ");
@@ -50,9 +50,10 @@ export function ProductMainLayout({
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 mt-4">
       
-      {/* 1. CARROSSEL (1º no Mobile | Coluna da Esquerda no Desktop) */}
+      {/* 1. CARROSSEL */}
       <div className="lg:col-span-8 flex flex-col gap-6">
         <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row gap-4">
+          
           {/* Miniaturas */}
           <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto max-h-[450px] order-2 sm:order-1 scrollbar-thin">
             {currentImages.map((img: string, idx: number) => (
@@ -66,22 +67,27 @@ export function ProductMainLayout({
                     : "border-border/60 hover:border-border opacity-70 hover:opacity-100",
                 )}
               >
-                <img
+                <Image
                   src={img}
                   alt={`Miniatura ${idx + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
                 />
               </button>
             ))}
           </div>
 
-          {/* Imagem Principal */}
+          {/* Imagem Principal (Otimizada para LCP com priority no primeiro índice) */}
           <div className="relative flex-1 rounded-xl overflow-hidden bg-muted flex items-center justify-center min-h-[380px] sm:min-h-[425px] order-1 sm:order-2">
             {currentImages[activeImageIndex] ? (
-              <img
+              <Image
                 src={currentImages[activeImageIndex]}
-                alt={product.nome}
-                className="w-full h-full object-contain max-h-[425px] transition-all duration-300"
+                alt={product.nome || "Produto"}
+                fill
+                priority={activeImageIndex === 0}
+                sizes="(max-width: 768px) 100vw, 60vw"
+                className="object-contain"
               />
             ) : (
               <span className="text-xs text-muted-foreground">Sem imagem</span>
@@ -90,7 +96,7 @@ export function ProductMainLayout({
         </div>
       </div>
 
-      {/* 2. BUY BOX / FORMA DE PAGAMENTO (2º no Mobile | Coluna da Direita no Desktop) */}
+      {/* 2. BUY BOX */}
       <div className="lg:col-span-4 lg:row-span-3 flex flex-col gap-6">
         <ProductPurchaseBox
           product={product}
@@ -103,7 +109,7 @@ export function ProductMainLayout({
         />
       </div>
 
-      {/* 3. CARACTERÍSTICAS (3º no Mobile | Abaixo do Carrossel no Desktop) */}
+      {/* 3. CARACTERÍSTICAS */}
       <div className="lg:col-span-8 bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold text-foreground mb-4">
           Características do produto
@@ -112,73 +118,56 @@ export function ProductMainLayout({
           {product.marca && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Marca</span>
-              <span className="font-medium text-foreground">
-                {product.marca}
-              </span>
+              <span className="font-medium text-foreground">{product.marca}</span>
             </div>
           )}
           {product.modelo && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Modelo</span>
-              <span className="font-medium text-foreground">
-                {product.modelo}
-              </span>
+              <span className="font-medium text-foreground">{product.modelo}</span>
             </div>
           )}
           {product.condicao && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Condição</span>
-              <span className="font-medium text-foreground capitalize">
-                {product.condicao}
-              </span>
+              <span className="font-medium text-foreground capitalize">{product.condicao}</span>
             </div>
           )}
           {product.categoria && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Categoria</span>
-              <span className="font-medium text-foreground">
-                {product.categoria}
-              </span>
+              <span className="font-medium text-foreground">{product.categoria}</span>
             </div>
           )}
           {coresDisponiveis && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Cores disponíveis</span>
-              <span className="font-medium text-foreground capitalize">
-                {coresDisponiveis}
-              </span>
+              <span className="font-medium text-foreground capitalize">{coresDisponiveis}</span>
             </div>
           )}
           {estampasDisponiveis && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Estampas</span>
-              <span className="font-medium text-foreground capitalize">
-                {estampasDisponiveis}
-              </span>
+              <span className="font-medium text-foreground capitalize">{estampasDisponiveis}</span>
             </div>
           )}
           {tamanhosDisponiveis && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Tamanhos</span>
-              <span className="font-medium text-foreground">
-                {tamanhosDisponiveis}
-              </span>
+              <span className="font-medium text-foreground">{tamanhosDisponiveis}</span>
             </div>
           )}
           {product.peso !== null && product.peso !== undefined && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Peso</span>
-              <span className="font-medium text-foreground">
-                {product.peso} kg
-              </span>
+              <span className="font-medium text-foreground">{product.peso} kg</span>
             </div>
           )}
           {product.garantia_dias !== null && product.garantia_dias > 0 && (
             <div className="flex justify-between py-2 border-b border-border/45">
               <span className="text-muted-foreground">Garantia</span>
               <span className="font-medium text-foreground">
-                {product.garantia_dias} dias (
-                {product.garantia_tipo || "vendedor"})
+                {product.garantia_dias} dias ({product.garantia_tipo || "vendedor"})
               </span>
             </div>
           )}
@@ -191,7 +180,7 @@ export function ProductMainLayout({
         </div>
       </div>
 
-      {/* 4. DESCRIÇÃO E AVALIAÇÕES (4º e 5º no Mobile | Sequência da Esquerda no Desktop) */}
+      {/* 4. DESCRIÇÃO E AVALIAÇÕES */}
       <div className="lg:col-span-8 flex flex-col gap-6">
         <div className="bg-card border border-border/60 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-foreground mb-4">Descrição</h2>

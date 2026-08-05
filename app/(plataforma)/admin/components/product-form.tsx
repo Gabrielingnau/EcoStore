@@ -146,7 +146,7 @@ export function ProductForm(props: ProductFormProps) {
                 }}
                 className={cn(
                   "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all shrink-0 border",
-                  isActive && "bg-primary text-primary-foreground border-primary shadow-sm",
+                  isActive && "bg-primary text-white border-primary shadow-sm",
                   isPassed && "bg-secondary/80 text-foreground border-border/80",
                   !isActive && !isPassed && "bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted"
                 )}
@@ -189,7 +189,7 @@ export function ProductForm(props: ProductFormProps) {
                   <Button
                     type="button"
                     onClick={handleNext}
-                    className="rounded-xl h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-2 shadow-sm"
+                    className="rounded-xl h-11 px-6 bg-primary hover:bg-primary/95 text-white font-bold gap-2 shadow-sm"
                   >
                     Continuar <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -198,7 +198,7 @@ export function ProductForm(props: ProductFormProps) {
                     type="button"
                     disabled={saving}
                     onClick={handleSubmit(onSubmit)}
-                    className="rounded-xl h-11 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
+                    className="rounded-xl h-11 px-8 bg-primary hover:bg-primary/95 text-white font-bold shadow-sm"
                   >
                     {saving ? "Salvando..." : "Salvar alterações"}
                   </Button>

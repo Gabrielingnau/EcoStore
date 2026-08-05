@@ -36,10 +36,8 @@ export function ProductsTab({ products }: ProductsTabProps) {
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [creating, setCreating] = useState(false);
   
-  // Estado para controlar o Modal Bonito de Exclusão
   const [productToDelete, setProductToDelete] = useState<ProductWithAtivo | null>(null);
 
-  // Mutação para Deletar para Sempre (Hard Delete) - Revalida Full
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteProductService(id),
     onSuccess: async (_, id) => {
@@ -53,7 +51,6 @@ export function ProductsTab({ products }: ProductsTabProps) {
     },
   });
 
-  // Mutação para Ativar/Desativar (Soft Delete) - Revalida apenas product e list
   const toggleActiveMutation = useMutation({
     mutationFn: ({
       id,
@@ -99,12 +96,11 @@ export function ProductsTab({ products }: ProductsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Seção de Criação e Edição de Produtos no topo */}
       <div className="space-y-6">
         {!creating && !editing && (
           <Button
             onClick={() => setCreating(true)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2 rounded-xl font-bold shadow-sm h-11 px-5"
+            className="bg-primary hover:bg-primary/90 text-white gap-2 rounded-xl font-bold shadow-sm h-11 px-5"
           >
             <Plus className="h-4 w-4" /> Novo produto
           </Button>
@@ -125,7 +121,6 @@ export function ProductsTab({ products }: ProductsTabProps) {
         )}
       </div>
 
-      {/* Grid de Todos os Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => {
           const isAtivo = product.ativo !== false;
@@ -140,7 +135,6 @@ export function ProductsTab({ products }: ProductsTabProps) {
                 isAdmin={true}
                 actions={
                   <div className="flex gap-1.5 w-full pt-1">
-                    {/* Botão Editar */}
                     <Button
                       size="sm"
                       variant="secondary"
@@ -150,18 +144,19 @@ export function ProductsTab({ products }: ProductsTabProps) {
                         setEditing(product);
                       }}
                       className="h-8 w-8 p-0 rounded-md bg-secondary/80 hover:bg-secondary transition-all"
+                      aria-label={`Editar ${product.nome}`}
                       title="Editar"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
 
-                    {/* Botão Ocultar / Mostrar */}
                     <Button
                       size="sm"
                       variant={isAtivo ? "outline" : "default"}
                       onClick={(e) => handleToggleActiveClick(e, product)}
                       disabled={toggleActiveMutation.isPending}
-                      className="h-8 flex-1 rounded-md text-xs px-2 flex items-center justify-center gap-1.5"
+                      className={`h-8 flex-1 rounded-md text-xs px-2 flex items-center justify-center gap-1.5 ${!isAtivo ? "text-white" : ""}`}
+                      aria-label={isAtivo ? `Ocultar ${product.nome}` : `Ativar ${product.nome}`}
                       title={isAtivo ? "Ocultar" : "Ativar"}
                     >
                       {isAtivo ? (
@@ -174,12 +169,12 @@ export function ProductsTab({ products }: ProductsTabProps) {
                       </span>
                     </Button>
 
-                    {/* Botão Excluir Permanente */}
                     <Button
                       size="sm"
                       variant="destructive"
                       onClick={(e) => handleOpenDeleteModal(e, product)}
-                      className="h-8 w-8 rounded-md p-0 flex items-center justify-center shadow-sm shrink-0"
+                      className="h-8 w-8 rounded-md p-0 flex items-center justify-center shadow-sm shrink-0 text-white"
+                      aria-label={`Excluir ${product.nome}`}
                       title="Excluir"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -192,7 +187,6 @@ export function ProductsTab({ products }: ProductsTabProps) {
         })}
       </div>
 
-      {/* MODAL BONITO DE EXCLUSÃO DEFINITIVA */}
       <Dialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader className="space-y-3">
@@ -231,7 +225,7 @@ export function ProductsTab({ products }: ProductsTabProps) {
             <Button
               type="button"
               variant="destructive"
-              className="flex-1 rounded-xl font-semibold"
+              className="flex-1 rounded-xl font-semibold text-white"
               disabled={deleteMutation.isPending}
               onClick={() => {
                 if (productToDelete) {

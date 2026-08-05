@@ -48,14 +48,14 @@ export default function AdminPage() {
         <div className="flex gap-2 bg-muted/40 p-1 rounded-xl border border-border/50">
           <Button 
             variant={tab === "produtos" ? "default" : "ghost"} 
-            className="rounded-lg font-semibold text-sm px-4"
+            className={`rounded-lg font-semibold text-sm px-4 ${tab === "produtos" ? "text-white" : ""}`}
             onClick={() => handleTabChange("produtos")}
           >
             Produtos
           </Button>
           <Button 
             variant={tab === "pedidos" ? "default" : "ghost"} 
-            className="rounded-lg font-semibold text-sm px-4"
+            className={`rounded-lg font-semibold text-sm px-4 ${tab === "pedidos" ? "text-white" : ""}`}
             onClick={() => handleTabChange("pedidos")}
           >
             Pedidos
@@ -106,8 +106,8 @@ export default function AdminPage() {
             </div>
 
             <div className="flex gap-1 bg-muted/40 p-0.5 rounded-lg border border-border w-fit">
-              <Button size="sm" variant={orderTab === "pendentes" ? "default" : "ghost"} onClick={() => setOrderTab("pendentes")} className="h-8 rounded-md text-xs">Ativos</Button>
-              <Button size="sm" variant={orderTab === "arquivados" ? "default" : "ghost"} onClick={() => setOrderTab("arquivados")} className="h-8 rounded-md text-xs">Arquivados</Button>
+              <Button size="sm" variant={orderTab === "pendentes" ? "default" : "ghost"} onClick={() => setOrderTab("pendentes")} className={`h-8 rounded-md text-xs ${orderTab === "pendentes" ? "text-white" : ""}`}>Ativos</Button>
+              <Button size="sm" variant={orderTab === "arquivados" ? "default" : "ghost"} onClick={() => setOrderTab("arquivados")} className={`h-8 rounded-md text-xs ${orderTab === "arquivados" ? "text-white" : ""}`}>Arquivados</Button>
             </div>
           </div>
         )}

@@ -115,7 +115,7 @@ function OrderCard({
                 #{order.id.slice(0, 8)}
               </h3>
               <Badge
-                className={`text-[8px] uppercase ${isPickup ? "bg-purple-600" : isLocal ? "bg-emerald-600" : "bg-blue-600"}`}
+                className={`text-[8px] uppercase ${isPickup ? "bg-purple-600 text-white" : isLocal ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"}`}
               >
                 {isPickup
                   ? "Retirada"
@@ -141,27 +141,32 @@ function OrderCard({
           </div>
         </div>
 
-        <Select
-          value={order.status}
-          onValueChange={(val) => updateStatus({ id: order.id, status: val })}
-          disabled={isStatusPending}
-        >
-          <SelectTrigger className="w-full h-8 text-xs">
-            <SelectValue>{order.status}</SelectValue>
-          </SelectTrigger>
-          <SelectContent className="w-[220px]">
-            <SelectItem value="Em Preparação">Em Preparação</SelectItem>
-            <SelectItem value="pronto_para_retirada">
-              Pronto p/ Retirada
-            </SelectItem>
-            <SelectItem value="preparando_entrega">
-              Preparando Entrega
-            </SelectItem>
-            <SelectItem value="Etiqueta Paga">Etiqueta Paga</SelectItem>
-            <SelectItem value="Postado">Postado</SelectItem>
-            <SelectItem value="Entregue">Entregue</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-1">
+          <label htmlFor={`order-status-${order.id}`} className="sr-only">
+            Status do pedido #{order.id.slice(0, 8)}
+          </label>
+          <Select
+            value={order.status}
+            onValueChange={(val) => updateStatus({ id: order.id, status: val })}
+            disabled={isStatusPending}
+          >
+            <SelectTrigger id={`order-status-${order.id}`} className="w-full h-8 text-xs" aria-label={`Status do pedido #${order.id.slice(0, 8)}`}>
+              <SelectValue>{order.status}</SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-[220px]">
+              <SelectItem value="Em Preparação">Em Preparação</SelectItem>
+              <SelectItem value="pronto_para_retirada">
+                Pronto p/ Retirada
+              </SelectItem>
+              <SelectItem value="preparando_entrega">
+                Preparando Entrega
+              </SelectItem>
+              <SelectItem value="Etiqueta Paga">Etiqueta Paga</SelectItem>
+              <SelectItem value="Postado">Postado</SelectItem>
+              <SelectItem value="Entregue">Entregue</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <CardContent className="flex-1 p-4 space-y-4 text-[11px]">

@@ -16,6 +16,19 @@ export function StepDescriptionLogistics() {
     { name: "length", label: "Comprimento (cm)" },
   ];
 
+  // Converte a string digitada para número apenas para o feedback visual instantâneo
+  const rawWeight = watch("weight");
+  const currentWeight = Number(String(rawWeight || "").replace(",", ".")) || 0;
+
+  const getWeightFeedback = (val: number) => {
+    if (val <= 0) return null;
+    if (val < 1) {
+      const grams = Math.round(val * 1000);
+      return `= ${grams} grama${grams > 1 ? "s" : ""}`;
+    }
+    return `= ${val} quilo${val > 1 ? "s" : ""}`;
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="space-y-2">
@@ -34,17 +47,26 @@ export function StepDescriptionLogistics() {
           {logisticsFields.map((field) => {
             const fieldError = errors[field.name as keyof typeof errors];
             const fieldValue = watch(field.name);
+            const isWeight = field.name === "weight";
 
             return (
               <div key={field.name} className="space-y-1">
-                <Label className="text-[10px] uppercase text-muted-foreground">{field.label}</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] uppercase text-muted-foreground">{field.label}</Label>
+                  {isWeight && currentWeight > 0 && (
+                    <span className="text-[10px] font-medium text-primary animate-fade-in">
+                      {getWeightFeedback(currentWeight)}
+                    </span>
+                  )}
+                </div>
                 <Input
                   type="text"
-                  placeholder="0"
+                  placeholder={isWeight ? "Ex: 0.5 ou 7" : "0"}
                   value={fieldValue ?? ""}
                   onChange={(e) => {
                     const masked = maskDecimal(e.target.value);
-                    setValue(field.name, masked === "" ? 0 : Number(masked), { shouldValidate: true });
+                    // Salvamos diretamente como string no form para o input não travar nunca a digitação
+                    setValue(field.name, masked, { shouldValidate: true });
                   }}
                   className={cn("rounded-xl h-11", fieldError && "border-destructive")}
                 />

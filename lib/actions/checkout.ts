@@ -11,7 +11,7 @@ export async function createCheckoutSession(payload: any) {
   const isBetterShipping = !isPickup && !isLocalDelivery;
 
   // 2. Definição de Status e Type baseados na escolha
-  let status = "pendente";
+  let status = "aguarde";
   let shippingType = "melhor_envio";
 
   if (isPickup) {
@@ -62,12 +62,13 @@ export async function createCheckoutSession(payload: any) {
 
   console.log("Calculado total do checkout:", total, "Peso total:", calculatedWeight);
 
-  // 3. Formato enxuto dos itens
+  // 3. Formato enxuto dos itens incluindo o ID da variante e do tamanho
   const minimalItemsData = payload.items.map((i: any) => ({
     id: i.product.id,
     q: i.quantity,
     p: getEffectivePrice(i.product),
-    sz: i.product.variant_size_id || null,
+    v: i.product.variant_id || i.product.v || null,
+    sz: i.product.variant_size_id || i.product.sz || null,
   }));
 
   // Montando o metadata base

@@ -42,24 +42,39 @@ export default function ProfilePage() {
                         {new Date(order.created_at).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
-                    <Badge className="rounded-md uppercase tracking-wider font-semibold text-[10px] px-3 py-1 bg-primary/10 text-primary">
+                    <Badge className="rounded-md uppercase tracking-wider font-extrabold text-[10px] px-3 py-1 bg-primary text-primary-foreground shadow-sm">
                       {order.status}
                     </Badge>
                   </div>
                 </CardHeader>
                 
                 <CardContent className="pt-6 space-y-6">
-                  {/* Produtos */}
+                  {/* Produtos do Pedido com suporte a variantes (Cor e Tamanho) salvos na order_items */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Produtos</h4>
                     {order.order_items.map((it) => (
                       <div key={it.id} className="flex gap-4 items-center p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted border">
+                        <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted border shrink-0">
                           <Image src={it.product_image || "/placeholder.png"} alt={it.product_name} fill className="object-cover" />
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-foreground">{it.product_name}</p>
-                          <p className="text-xs text-muted-foreground">{it.quantity}x {formatBRL(Number(it.unit_price))}</p>
+                        <div className="flex-1 min-w-0 text-xs space-y-1">
+                          <p className="font-semibold text-foreground truncate">{it.product_name}</p>
+                          
+                          {/* Exibição da Cor e Tamanho da Variante salva no item */}
+                          {(it.cor || it.tamanho) && (
+                            <p className="text-primary font-medium">
+                              {it.cor ? `Cor: ${it.cor}` : ""}
+                              {it.cor && it.tamanho ? " • " : ""}
+                              {it.tamanho ? `Tamanho: ${it.tamanho}` : ""}
+                            </p>
+                          )}
+
+                          <p className="text-muted-foreground">
+                            {it.quantity}x {formatBRL(Number(it.unit_price))}
+                          </p>
+                        </div>
+                        <div className="text-right font-bold text-foreground text-xs">
+                          {formatBRL(Number(it.unit_price) * it.quantity)}
                         </div>
                       </div>
                     ))}
@@ -67,51 +82,51 @@ export default function ProfilePage() {
 
                   <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-border">
                     {/* Logística */}
-<div className="space-y-3">
-  <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-    <Truck className="h-4 w-4 text-primary" /> Informações de Entrega
-  </div>
-  <div className="bg-muted/40 p-3 rounded-lg text-xs text-muted-foreground space-y-2 border border-border/50">
-    {/* Identificação do tipo de entrega */}
-    <p className="font-bold text-foreground">
-      {order.shipping_type === 'retirada' 
-        ? "Retirada na Loja" 
-        : order.shipping_type === 'entrega_propria' 
-          ? "Entrega Própria da Loja" 
-          : "Envio por Transportadora"}
-    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                        <Truck className="h-4 w-4 text-primary" /> Informações de Entrega
+                      </div>
+                      <div className="bg-muted/40 p-3 rounded-lg text-xs text-muted-foreground space-y-2 border border-border/50">
+                        {/* Identificação do tipo de entrega */}
+                        <p className="font-bold text-foreground">
+                          {order.shipping_type === 'retirada' 
+                            ? "Retirada na Loja" 
+                            : order.shipping_type === 'entrega_propria' 
+                              ? "Entrega Própria da Loja" 
+                              : "Envio por Transportadora"}
+                        </p>
 
-    {/* Endereço ou Local de Retirada */}
-    {order.shipping_type !== 'retirada' && (
-      <p className="flex items-start gap-2">
-        <MapPin className="h-3.5 w-3.5 mt-0.5" /> 
-        {order.shipping_address}, {order.shipping_city}
-      </p>
-    )}
+                        {/* Endereço ou Local de Retirada */}
+                        {order.shipping_type !== 'retirada' && (
+                          <p className="flex items-start gap-2">
+                            <MapPin className="h-3.5 w-3.5 mt-0.5" /> 
+                            {order.shipping_address}, {order.shipping_city}
+                          </p>
+                        )}
 
-    {/* Lógica de Rastreio/Status */}
-    {order.shipping_type === 'melhor_envio' ? (
-      order.tracking_code ? (
-        <a 
-          href={`https://www.melhorrastreio.com.br/rastreio/${order.tracking_code}`} 
-          target="_blank" 
-          rel="noreferrer"
-          className="flex items-center gap-1 text-primary font-bold hover:underline"
-        >
-          Rastrear: {order.tracking_code} <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : (
-        <p className="font-semibold text-amber-600">Aguardando código de rastreio</p>
-      )
-    ) : (
-      <p className="font-semibold text-primary">
-        {order.shipping_type === 'retirada' 
-          ? "Pode buscar seu pedido na loja!" 
-          : "Nossa equipe está separando seu pedido para entrega."}
-      </p>
-    )}
-  </div>
-</div>
+                        {/* Lógica de Rastreio/Status */}
+                        {order.shipping_type === 'melhor_envio' ? (
+                          order.tracking_code ? (
+                            <a 
+                              href={`https://www.melhorrastreio.com.br/rastreio/${order.tracking_code}`} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              className="flex items-center gap-1 text-primary font-bold hover:underline"
+                            >
+                              Rastrear: {order.tracking_code} <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : (
+                            <p className="font-semibold text-amber-600">Aguardando código de rastreio</p>
+                          )
+                        ) : (
+                          <p className="font-semibold text-primary">
+                            {order.shipping_type === 'retirada' 
+                              ? "Pode buscar seu pedido na loja!" 
+                              : "Nossa equipe está separando seu pedido para entrega."}
+                          </p>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Valores */}
                     <div className="space-y-3">

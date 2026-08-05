@@ -17,8 +17,73 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EcoStore — Moda autêntica",
-  description: "Loja de roupas e acessórios premium",
+  metadataBase: new URL("https://eco-store-tan.vercel.app"),
+
+  title: {
+    default: "EcoStore — Moda Autêntica e Acessórios Premium",
+    template: "%s | EcoStore",
+  },
+
+  description:
+    "Descubra roupas e acessórios de alta qualidade com design autêntico. Vista seu estilo com sofisticação, conforto e entrega rápida.",
+
+  keywords: [
+    "moda autêntica",
+    "roupas premium",
+    "acessórios",
+    "EcoStore",
+    "moda sustentável",
+    "tendências de estilo",
+  ],
+
+  authors: [{ name: "EcoStore" }],
+  creator: "EcoStore",
+  publisher: "EcoStore",
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: "https://eco-store-tan.vercel.app",
+    siteName: "EcoStore",
+    title: "EcoStore — Moda Autêntica e Acessórios Premium",
+    description:
+      "Renove seu guarda-roupa com peças exclusivas, alta qualidade e estilo autêntico. Confira as novidades!",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "EcoStore - Moda Autêntica e Acessórios",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "EcoStore — Moda Autêntica",
+    description:
+      "Roupas e acessórios premium para quem valoriza estilo e autenticidade.",
+    images: ["/og-image.jpg"],
+  },
+
+  // Ícones (Opcional, caso queira garantir favicon futuramente)
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

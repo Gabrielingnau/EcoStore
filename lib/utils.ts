@@ -78,6 +78,17 @@ export function isLocalZip(clientZip: string, storeZip: string): boolean {
 }
 
 export const maskDecimal = (value: string) => {
-  // Permite apenas números e uma vírgula ou ponto
-  return value.replace(/[^0-9.,]/g, "").replace(",", ".");
+  // Substitui vírgula por ponto para padronizar
+  let cleaned = value.replace(",", ".");
+  
+  // Permite apenas números e um único ponto decimal
+  cleaned = cleaned.replace(/[^0-9.]/g, "");
+  
+  const parts = cleaned.split(".");
+  if (parts.length > 2) {
+    // Se houver mais de um ponto, mantém apenas o primeiro
+    cleaned = parts[0] + "." + parts.slice(1).join("");
+  }
+  
+  return cleaned;
 };

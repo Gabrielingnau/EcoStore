@@ -71,6 +71,9 @@ export async function deleteExtraImage(id: string) {
 /**
  * Função unificada de persistência de produto, imagens, variantes, tamanhos e guia de tamanhos.
  */
+/**
+ * Função unificada de persistência de produto, imagens, variantes, tamanhos e guia de tamanhos.
+ */
 export async function saveProductWithGallery({
   form,
   productId,
@@ -94,14 +97,12 @@ export async function saveProductWithGallery({
       for (const imgItem of variant.imagens) {
         if (typeof imgItem === "object" && imgItem !== null) {
           if (imgItem.file) {
-            // Se tiver um arquivo novo, faz o upload para o storage
             const publicUrl = await uploadStorageFile(imgItem.file);
             uploadedImageUrls.push(publicUrl);
           } else if (imgItem.url && !imgItem.url.startsWith("blob:")) {
             uploadedImageUrls.push(imgItem.url);
           }
         } else if (typeof imgItem === "string" && !imgItem.startsWith("blob:")) {
-          // Se já for uma URL válida do storage
           uploadedImageUrls.push(imgItem);
         }
       }
@@ -113,7 +114,7 @@ export async function saveProductWithGallery({
     })
   );
 
-  // 2. Determinar qual é a variante principal e extrair a capa (primeira imagem dela)
+  // 2. Determinar qual é a variante principal e extrair a capa
   const principalVariant = 
     processedVariants.find((v) => v.is_principal) || processedVariants[0];
   
@@ -122,7 +123,7 @@ export async function saveProductWithGallery({
       ? principalVariant.imagens[0] 
       : form.imagem_url || "";
 
-  // 3. SOMA AUTOMÁTICA DO ESTOQUE: Percorre todas as variantes e todos os tamanhos somando o estoque total
+  // 3. SOMA AUTOMÁTICA DO ESTOQUE
   const totalCalculatedStock = processedVariants.reduce((total: number, variant: any) => {
     const variantSizesStock = (variant.sizes || []).reduce((acc: number, size: any) => {
       return acc + (Number(size.estoque) || 0);
@@ -130,7 +131,6 @@ export async function saveProductWithGallery({
     return total + variantSizesStock;
   }, 0);
 
-  // 4. Payload da tabela products integrando dados do formulário e o estoque agregado
   const productPayload = {
     nome: form.nome,
     marca: form.marca,
@@ -144,10 +144,10 @@ export async function saveProductWithGallery({
         ? form.preco_promocional
         : parseDigitsToFloat(String(form.preco_promocional))
       : null,
-    estoque: totalCalculatedStock, // <-- Estoque total calculado dinamicamente das variantes/tamanhos
+    estoque: totalCalculatedStock,
     destaque: form.destaque ?? false,
     ativo: form.ativo ?? true,
-    imagem_url: finalCapaUrl, // <-- Capa sincronizada com a variante principal
+    imagem_url: finalCapaUrl,
     weight: Number(form.weight),
     width: Number(form.width),
     height: Number(form.height),
@@ -183,7 +183,7 @@ export async function saveProductWithGallery({
 
   if (!savedProductId) throw new Error("ID do produto não retornado.");
 
-  // 5. Imagens Extras do Produto
+  // 4. Imagens Extras do Produto
   const pendingExtraFiles = localExtraImages.filter((img) => img.isNewLocal && img.file);
   if (pendingExtraFiles.length > 0) {
     await Promise.all(
@@ -199,13 +199,23 @@ export async function saveProductWithGallery({
     );
   }
 
-  // 6. Sincroniza Variantes (Etapa 2) e Tamanhos/SKUs (Etapa 3)
-  if (processedVariants.length > 0) {
-    if (productId) {
-      // Se for edição, removemos as antigas para recriar limpo
-      await supabase.from("product_variants").delete().eq("product_id", savedProductId);
-    }
+  // 5. LIMPEZA TOTAL E SEGURA DAS VARIANTES ANTIGAS ANTES DE INSERIR AS NOVAS
+  // Isso impede totalmente o acúmulo de tamanhos fantasmas duplicados ao editar!
+  const { data: oldVariants } = await supabase
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", savedProductId);
 
+  if (oldVariants && oldVariants.length > 0) {
+    const oldVariantIds = oldVariants.map((v: any) => v.id);
+    // Deleta primeiro os tamanhos vinculados
+    await supabase.from("variant_sizes").delete().in("variant_id", oldVariantIds);
+    // Depois deleta as variantes antigas
+    await supabase.from("product_variants").delete().eq("product_id", savedProductId);
+  }
+
+  // 6. Insere as novas variantes e seus tamanhos com SKUs garantidos e únicos
+  if (processedVariants.length > 0) {
     for (const variant of processedVariants) {
       const { data: insertedVariant, error: varErr } = await supabase
         .from("product_variants")
@@ -214,7 +224,7 @@ export async function saveProductWithGallery({
           cor: variant.cor,
           padrao_tecido: variant.padrao_tecido || null,
           is_principal: variant.is_principal,
-          imagens: variant.imagens, // Array de strings limpas com as URLs do storage
+          imagens: variant.imagens,
         })
         .select()
         .single();
@@ -222,13 +232,19 @@ export async function saveProductWithGallery({
       if (varErr) throw varErr;
 
       if (insertedVariant && variant.sizes && variant.sizes.length > 0) {
-        const sizePayloads = variant.sizes.map((s: any) => ({
-          variant_id: insertedVariant.id,
-          tamanho: s.tamanho,
-          estoque: Number(s.estoque),
-          sku: s.sku || `SKU-${Math.random().toString(36).substring(7).toUpperCase()}`,
-          codigo_universal: s.codigo_universal || null,
-        }));
+        const sizePayloads = variant.sizes.map((s: any, idx: number) => {
+          // Garante um SKU único infalível combinando o índice, timestamp curto e aleatório
+          const uniqueSkuSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
+          const fallbackSku = `SKU-${s.tamanho || 'U'}-${idx}-${Date.now().toString().slice(-4)}-${uniqueSkuSuffix}`;
+
+          return {
+            variant_id: insertedVariant.id,
+            tamanho: s.tamanho,
+            estoque: Number(s.estoque),
+            sku: s.sku && s.sku.trim() !== "" ? s.sku : fallbackSku,
+            codigo_universal: s.codigo_universal || null,
+          };
+        });
 
         const { error: sizeErr } = await supabase.from("variant_sizes").insert(sizePayloads);
         if (sizeErr) throw sizeErr;

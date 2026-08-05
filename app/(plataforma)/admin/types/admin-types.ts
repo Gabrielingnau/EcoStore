@@ -124,29 +124,49 @@ export const step4Schema = yup.object({
     .min(10, "Mínimo 10 caracteres"),
 
   weight: yup
-    .number()
-    .transform((value, originalValue) => (originalValue === "" ? 0 : value))
-    .typeError("Peso inválido")
-    .min(0.001, "Peso deve ser maior que 0")
+    .mixed()
+    .transform((value, originalValue) => {
+      if (originalValue === "" || originalValue == null) return 0;
+      const stringVal = String(originalValue).replace(",", ".");
+      const num = Number(stringVal);
+      return isNaN(num) ? 0 : num;
+    })
+    .test(
+      "is-valid-weight",
+      "Peso é obrigatório e deve ser maior que 0",
+      (val) => typeof val === "number" && val > 0
+    )
     .required("Peso é obrigatório"),
+    
   width: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" ? 0 : value))
+    .transform((value: any, originalValue: any) => {
+      if (originalValue === "" || originalValue == null) return 0;
+      return Number(String(originalValue).replace(",", ".")) || 0;
+    })
     .typeError("Largura inválida")
     .min(1, "Mínimo 1cm")
     .required("Largura é obrigatória"),
+    
   height: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" ? 0 : value))
+    .transform((value: any, originalValue: any) => {
+      if (originalValue === "" || originalValue == null) return 0;
+      return Number(String(originalValue).replace(",", ".")) || 0;
+    })
     .typeError("Altura inválida")
     .min(1, "Mínimo 1cm")
     .required("Altura é obrigatória"),
+    
   length: yup
     .number()
-    .transform((value, originalValue) => (originalValue === "" ? 0 : value))
+    .transform((value: any, originalValue: any) => {
+      if (originalValue === "" || originalValue == null) return 0;
+      return Number(String(originalValue).replace(",", ".")) || 0;
+    })
     .typeError("Comprimento inválido")
     .min(1, "Mínimo 1cm")
-    .required("Comprimento é obrigatório"),
+    .required("Comprimento é obrigatória"),
 });
 
 // Etapa 5: Preço, Preço Promocional e Garantia

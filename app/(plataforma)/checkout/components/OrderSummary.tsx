@@ -7,19 +7,18 @@ import { formatBRL } from "@/lib/utils";
 interface OrderSummaryProps {
   items: any[];
   shipping: any;
-  total: number;
+  total: number; // Pode ignorar ou usar apenas como fallback se necessário
 }
 
-export function OrderSummary({ items, shipping, total }: OrderSummaryProps) {
+export function OrderSummary({ items, shipping }: OrderSummaryProps) {
   const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
 
-  // Cálculos consolidados usando preco_promocional (preço cheio fica em 'preco' e o promocional em 'preco_promocional')
+  // Cálculos consolidados usando preco_promocional
   const { originalSubtotal, currentSubtotal, totalEconomy } = items.reduce(
     (acc, i) => {
       const regularPrice = Number(i.product.preco) || 0;
       const promoPrice = i.product.preco_promocional ? Number(i.product.preco_promocional) : regularPrice;
       
-      // Se tiver preço promocional válido menor que o preço normal, ele usa o promocional
       const effectivePrice = promoPrice > 0 && promoPrice < regularPrice ? promoPrice : regularPrice;
 
       acc.originalSubtotal += regularPrice * i.quantity;
@@ -36,6 +35,10 @@ export function OrderSummary({ items, shipping, total }: OrderSummaryProps) {
   const shippingEconomy = originalShippingPrice > shippingPrice ? originalShippingPrice - shippingPrice : 0;
   
   const finalEconomy = totalEconomy + shippingEconomy;
+
+  // CORREÇÃO: Calculamos o total real somando o subproduto com desconto + o preço do frete atual
+  const calculatedTotal = currentSubtotal + shippingPrice;
+  const calculatedOriginalTotal = originalSubtotal + (originalShippingPrice > 0 ? originalShippingPrice : shippingPrice);
 
   return (
     <Card className="border border-border/80 shadow-md rounded-2xl bg-card overflow-hidden">
@@ -152,12 +155,12 @@ export function OrderSummary({ items, shipping, total }: OrderSummaryProps) {
             <div className="flex justify-between font-black text-lg md:text-xl text-primary items-center">
               <span>Total</span>
               <div className="text-right flex flex-col items-end">
-                {originalSubtotal + originalShippingPrice > total && (
+                {calculatedOriginalTotal > calculatedTotal && (
                   <span className="line-through text-xs text-muted-foreground font-normal">
-                    {formatBRL(originalSubtotal + originalShippingPrice)}
+                    {formatBRL(calculatedOriginalTotal)}
                   </span>
                 )}
-                <span>{formatBRL(total)}</span>
+                <span>{formatBRL(calculatedTotal)}</span>
               </div>
             </div>
 

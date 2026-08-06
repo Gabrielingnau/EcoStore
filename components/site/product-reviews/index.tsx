@@ -108,19 +108,25 @@ export function ProductReviews({ productId, initialReviews }: Props) {
 
   return (
     <div className="space-y-6 pt-4 border-t">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Avaliações dos Clientes</h2>
-        {initialReviews.length > 0 && (
-          <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border">
-            <Star className="h-4 w-4 fill-primary text-primary" />
-            <span className="font-bold text-sm">{avg.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">
-              ({initialReviews.length}{" "}
-              {initialReviews.length === 1 ? "avaliação" : "avaliações"})
-            </span>
-          </div>
-        )}
-      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+  {/* Título com truncamento caso o texto seja muito longo */}
+  <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-foreground truncate">
+    Avaliações dos Clientes
+  </h2>
+
+  {initialReviews.length > 0 && (
+    <div className="flex items-center gap-1.5 sm:gap-2 bg-muted/50 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-border/60 shrink-0 whitespace-nowrap">
+      <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-primary text-primary shrink-0" />
+      <span className="font-bold text-xs sm:text-sm text-foreground">
+        {avg.toFixed(1)}
+      </span>
+      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+        ({initialReviews.length}{" "}
+        {initialReviews.length === 1 ? "avaliação" : "avaliações"})
+      </span>
+    </div>
+  )}
+</div>
 
       {/* Bloco de Avaliação do Usuário Logado */}
       {user && (

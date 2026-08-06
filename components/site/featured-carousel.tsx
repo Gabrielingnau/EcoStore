@@ -10,7 +10,7 @@ import {
 import type { Product } from "@/lib/types/admin-types";
 import { formatBRL } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowRight, Tag } from "lucide-react";
+import { ArrowRight, Tag, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
@@ -27,7 +27,7 @@ export function FeaturedCarousel({
   actions,
 }: FeaturedCarouselProps) {
   return (
-    <div className="w-full relative px-4 md:px-0">
+    <div className="w-full relative px-2 md:px-0">
       <Carousel
         opts={{
           align: "start",
@@ -35,7 +35,7 @@ export function FeaturedCarousel({
         }}
         className="w-full"
       >
-        <CarouselContent>
+        <CarouselContent className="-ml-2 md:-ml-4">
           {products.map((product, index) => {
             const hasDiscount =
               product.preco_promocional !== null &&
@@ -54,72 +54,77 @@ export function FeaturedCarousel({
               ? product.preco_promocional!
               : product.preco;
 
-            // O primeiro item do carrossel é o principal candidato a LCP da página
             const isLcpCandidate = index === 0;
 
             const SlideContent = (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
                 viewport={{ once: true }}
-                className="relative aspect-[16/10] rounded-xl overflow-hidden bg-card border border-border shadow-lg group"
+                className="relative flex flex-col rounded-md overflow-hidden bg-card border-2 border-primary/20 shadow-sm hover:shadow-md transition-all group h-full"
               >
-                {/* Substituído <img> por <Image> do Next.js com otimização */}
-                <Image
-                  src={product.imagem_url}
-                  alt={product.nome}
-                  fill
-                  priority={isLcpCandidate}
-                  // @ts-ignore - fetchPriority é suportado nativamente pelo Next.js em versões recentes
-                  fetchPriority={isLcpCandidate ? "high" : "auto"}
-                  sizes="(max-width: 768px) 90vw, 60vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-
-                {/* Sombra suave apenas na parte inferior para leitura do texto */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                {/* Badge no Topo: Destaque e % OFF */}
-                <div className="absolute top-3 left-3 md:top-4 md:left-4 flex items-center gap-2 z-10">
-                  {product.destaque && (
-                    <span className="bg-primary/90 text-primary-foreground text-[10px] md:text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow">
-                      Destaque
-                    </span>
-                  )}
-                  {hasDiscount && (
-                    <span className="bg-emerald-600 text-white font-extrabold text-[10px] md:text-xs px-2.5 py-1 rounded-md shadow flex items-center gap-1">
-                      <Tag className="w-3 h-3" />
-                      {percentageOff}% OFF
-                    </span>
-                  )}
+                {/* Container fixo e estritamente quadrado (aspect-square) para mobile e desktop */}
+                <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
+                  <Image
+                    src={product.imagem_url || "/placeholder.png"}
+                    alt={product.nome}
+                    fill
+                    priority={isLcpCandidate}
+                    // @ts-ignore
+                    fetchPriority={isLcpCandidate ? "high" : "auto"}
+                    sizes="(max-width: 768px) 55vw, 40vw"
+                    /* object-cover garante preenchimento total e perfeito do container */
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
                 </div>
 
-                {/* Informações na Parte Inferior */}
-                <div className="absolute inset-0 p-4 md:p-8 flex items-end justify-between z-10">
-                  <div className="flex flex-col gap-1 max-w-[75%] md:max-w-[80%]">
-                    {/* Marca e Categoria */}
-                    <div className="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-wider text-primary font-bold">
+                {/* Informações sempre abaixo da foto */}
+                <div className="p-3 md:p-5 flex flex-col justify-between flex-1 bg-card border-t border-border/40">
+                  <div className="flex flex-col gap-1.5 md:gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {product.destaque && (
+                        <span className="bg-amber-500 text-slate-950 font-black text-[9px] md:text-xs px-2 py-0.5 rounded-sm uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                          <Zap className="w-2.5 h-2.5 md:w-3 md:h-3 fill-slate-950" aria-hidden="true" />
+                          Destaque
+                        </span>
+                      )}
+                      {hasDiscount && (
+                        <span className="bg-emerald-400 text-emerald-950 font-black text-[9px] md:text-xs px-2 py-0.5 rounded-sm flex items-center gap-1 shadow-xs">
+                          <Tag className="w-2.5 h-2.5 md:w-3 md:h-3" aria-hidden="true" />
+                          {percentageOff}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-bold">
                       {product.marca && <span>{product.marca}</span>}
                       {product.marca && product.categoria && <span>•</span>}
                       {product.categoria && <span>{product.categoria}</span>}
                     </div>
 
-                    {/* Nome do Produto */}
-                    <h3 className="text-lg md:text-3xl font-black text-white drop-shadow-md line-clamp-1">
+                    <h3 className="text-xs md:text-lg font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                       {product.nome}
                     </h3>
 
-                    {/* Preços */}
-                    <div className="flex items-baseline gap-2 mt-0.5">
-                      {hasDiscount && (
-                        <span className="text-xs md:text-lg text-white/70 line-through font-semibold">
-                          {formatBRL(product.preco)}
+                    <div className="flex items-center justify-between mt-1 pt-2 border-t border-border/20">
+                      <div className="flex items-baseline gap-2">
+                        {hasDiscount && (
+                          <span className="text-[11px] md:text-sm text-muted-foreground line-through font-semibold">
+                            {formatBRL(product.preco)}
+                          </span>
+                        )}
+                        <span className="text-base md:text-2xl font-extrabold text-primary">
+                          {formatBRL(finalPrice)}
                         </span>
+                      </div>
+
+                      {!isAdmin && (
+                        <div className="hidden md:flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-1 transition-transform">
+                          Ver Detalhes
+                          <ArrowRight className="h-4 w-4" />
+                        </div>
                       )}
-                      <span className="text-xl md:text-3xl font-black text-primary drop-shadow-md">
-                        {formatBRL(finalPrice)}
-                      </span>
                     </div>
 
                     {isAdmin && actions && (
@@ -131,12 +136,6 @@ export function FeaturedCarousel({
                       </div>
                     )}
                   </div>
-
-                  {!isAdmin && (
-                    <div className="hidden md:flex h-12 w-12 md:h-16 md:w-16 rounded-full bg-primary text-primary-foreground items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md flex-shrink-0">
-                      <ArrowRight className="h-6 w-6 md:h-8 md:w-8" />
-                    </div>
-                  )}
                 </div>
               </motion.div>
             );
@@ -144,12 +143,16 @@ export function FeaturedCarousel({
             return (
               <CarouselItem
                 key={product.id}
-                className="pl-4 basis-[90%] md:basis-[70%] lg:basis-[60%]"
+                className="pl-2 md:pl-4 basis-[52%] sm:basis-[48%] md:basis-[45%] lg:basis-[38%]"
               >
                 {isAdmin ? (
-                  <div className="block relative z-20">{SlideContent}</div>
+                  <div className="block relative z-20 h-full">{SlideContent}</div>
                 ) : (
-                  <Link href={`/produto/${product.id}`} className="block">
+                  <Link 
+                    href={`/produto/${product.id}`} 
+                    className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                    aria-label={`Ver produto em destaque: ${product.nome}`}
+                  >
                     {SlideContent}
                   </Link>
                 )}
@@ -159,8 +162,8 @@ export function FeaturedCarousel({
         </CarouselContent>
 
         <div className="hidden md:block">
-          <CarouselPrevious className="left-4 h-12 w-12 bg-secondary/80 backdrop-blur-md border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors" />
-          <CarouselNext className="right-4 h-12 w-12 bg-secondary/80 backdrop-blur-md border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors" />
+          <CarouselPrevious className="-left-3 h-10 w-10 bg-background/90 backdrop-blur-md border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow-md" />
+          <CarouselNext className="-right-3 h-10 w-10 bg-background/90 backdrop-blur-md border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-colors shadow-md" />
         </div>
       </Carousel>
     </div>

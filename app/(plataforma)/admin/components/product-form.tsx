@@ -110,24 +110,25 @@ export function ProductForm(props: ProductFormProps) {
   };
 
   return (
-    <Card className="rounded-2xl border border-border bg-card shadow-lg animate-fade-in w-full mx-auto">
-      <CardHeader className="border-b border-border/50 pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-xl font-bold text-foreground">
+    <Card className="rounded-xl sm:rounded-2xl border border-border bg-card shadow-lg animate-fade-in w-full mx-auto">
+      {/* Reduzido o padding do topo do CardHeader */}
+      <CardHeader className="border-b border-border/50 p-3 sm:p-5 pb-3">
+        <div className="flex items-center justify-between mb-2 sm:mb-3">
+          <CardTitle className="text-base sm:text-lg font-bold text-foreground">
             {isEdit ? "Editar produto" : "Novo produto"}
           </CardTitle>
           <button
             type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 transition-colors"
+            className="text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 transition-colors px-1 py-0.5 rounded"
             disabled={saving}
           >
             <X className="h-4 w-4" /> cancelar
           </button>
         </div>
 
-        {/* Stepper Header Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {/* Stepper Header Tabs - Compactado com whitespace-nowrap */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
           {STEPS.map((step) => {
             const isActive = currentStep === step.id;
             const isPassed = currentStep > step.id;
@@ -145,13 +146,13 @@ export function ProductForm(props: ProductFormProps) {
                   }
                 }}
                 className={cn(
-                  "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all shrink-0 border",
-                  isActive && "bg-primary text-white border-primary shadow-sm",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-medium transition-all shrink-0 border whitespace-nowrap",
+                  isActive && "bg-primary text-white border-primary shadow-xs",
                   isPassed && "bg-secondary/80 text-foreground border-border/80",
                   !isActive && !isPassed && "bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted"
                 )}
               >
-                {isPassed ? <Check className="h-3.5 w-3.5 text-primary" /> : <span>{step.id}.</span>}
+                {isPassed ? <Check className="h-3 w-3 text-primary shrink-0" /> : <span>{step.id}.</span>}
                 {step.label}
               </button>
             );
@@ -159,46 +160,51 @@ export function ProductForm(props: ProductFormProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="pt-6">
+      {/* Reduzido o padding das laterais e do topo no CardContent para os inputs */}
+      <CardContent className="p-3 sm:p-5 pt-3 sm:pt-4">
         <FormProvider {...methods}>
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             {currentStep === 1 && <StepBasicInfo />}
             {currentStep === 2 && <StepVariants />}
             {currentStep === 3 && <StepSizesSku />}
             {currentStep === 4 && <StepDescriptionLogistics />}
             {currentStep === 5 && <StepPricingWarranty />}
 
-            {/* Rodapé com Botões de Navegação */}
-            <div className="flex items-center justify-between pt-6 border-t border-border/50">
+            {/* Rodapé Otimizado e sem a palavra "Etapa" para evitar quebras */}
+            <div className="flex items-center justify-between pt-4 border-t border-border/50 gap-2">
               {currentStep > 1 ? (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handlePrev}
-                  className="rounded-xl h-11 px-5 gap-2 border-border"
+                  className="rounded-lg h-9 px-3 sm:px-4 text-xs gap-1 sm:gap-2 border-border"
                 >
-                  <ChevronLeft className="h-4 w-4" /> Voltar
+                  <ChevronLeft className="h-3.5 w-3.5" /> Voltar
                 </Button>
               ) : (
                 <div />
               )}
 
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground">Etapa {currentStep} de 5</span>
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                {/* Indicação numérica limpa e protegida contra quebra */}
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  {currentStep} / 5
+                </span>
+
                 {currentStep < 5 ? (
                   <Button
                     type="button"
                     onClick={handleNext}
-                    className="rounded-xl h-11 px-6 bg-primary hover:bg-primary/95 text-white font-bold gap-2 shadow-sm"
+                    className="rounded-lg h-9 px-4 sm:px-5 bg-primary hover:bg-primary/95 text-white font-bold text-xs gap-1.5 shadow-xs whitespace-nowrap"
                   >
-                    Continuar <ChevronRight className="h-4 w-4" />
+                    Continuar <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                 ) : (
                   <Button
                     type="button"
                     disabled={saving}
                     onClick={handleSubmit(onSubmit)}
-                    className="rounded-xl h-11 px-8 bg-primary hover:bg-primary/95 text-white font-bold shadow-sm"
+                    className="rounded-lg h-9 px-5 sm:px-6 bg-primary hover:bg-primary/95 text-white font-bold text-xs shadow-xs whitespace-nowrap"
                   >
                     {saving ? "Salvando..." : "Salvar alterações"}
                   </Button>

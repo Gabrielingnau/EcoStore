@@ -1,6 +1,20 @@
 "use client";
 
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Archive,
   ArchiveRestore,
   ExternalLink,
@@ -17,20 +31,6 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { enviarParaCarrinhoMelhorEnvio } from "@/lib/actions/melhor-envio";
 import { formatBRL } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
@@ -44,14 +44,14 @@ export function OrdersTab({ orders }: { orders: OrderWithItems[] }) {
 
   if (orders.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
+      <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground p-4 text-center">
         Nenhum pedido encontrado.
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {orders.map((order) => (
         <OrderCard
           key={order.id}
@@ -107,15 +107,21 @@ function OrderCard({
     <Card
       className={`flex flex-col overflow-hidden border transition-all hover:shadow-md ${shippingStyles}`}
     >
-      <div className="border-b border-border/50 bg-muted/20 p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold tracking-tight">
+      <div className="border-b border-border/50 bg-muted/20 p-3 sm:p-4">
+        <div className="flex justify-between items-start gap-2 mb-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <span className="text-xs sm:text-sm font-bold tracking-tight break-all">
                 #{order.id.slice(0, 8)}
               </span>
               <Badge
-                className={`text-[8px] uppercase ${isPickup ? "bg-purple-600 text-white" : isLocal ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"}`}
+                className={`text-[8px] uppercase shrink-0 ${
+                  isPickup
+                    ? "bg-purple-600 text-white"
+                    : isLocal
+                      ? "bg-emerald-600 text-white"
+                      : "bg-blue-600 text-white"
+                }`}
               >
                 {isPickup
                   ? "Retirada"
@@ -128,8 +134,8 @@ function OrderCard({
               {new Date(order.created_at).toLocaleDateString("pt-BR")}
             </p>
           </div>
-          <div className="text-right space-y-1">
-            <p className="text-sm font-bold text-primary">
+          <div className="text-right shrink-0 space-y-1">
+            <p className="text-xs sm:text-sm font-bold text-primary">
               {formatBRL(Number(order.total))}
             </p>
             <div className="flex flex-wrap gap-1 justify-end">
@@ -150,7 +156,11 @@ function OrderCard({
             onValueChange={(val) => updateStatus({ id: order.id, status: val })}
             disabled={isStatusPending}
           >
-            <SelectTrigger id={`order-status-${order.id}`} className="w-full h-8 text-xs" aria-label={`Status do pedido #${order.id.slice(0, 8)}`}>
+            <SelectTrigger
+              id={`order-status-${order.id}`}
+              className="w-full h-8 text-xs bg-background"
+              aria-label={`Status do pedido #${order.id.slice(0, 8)}`}
+            >
               <SelectValue>{order.status}</SelectValue>
             </SelectTrigger>
             <SelectContent className="w-[220px]">
@@ -169,14 +179,15 @@ function OrderCard({
         </div>
       </div>
 
-      <CardContent className="flex-1 p-4 space-y-4 text-[11px]">
-        <div className="rounded-lg bg-muted/40 p-3 space-y-2 border border-border/50">
-          <div className="font-bold flex items-center gap-2">
-            {isPickup ? <MapPin size={12} /> : <User size={12} />}
+      <CardContent className="flex-1 p-3 sm:p-4 space-y-3 sm:space-y-4 text-[11px]">
+        <div className="rounded-lg bg-muted/40 p-2.5 sm:p-3 space-y-2 border border-border/50">
+          <div className="font-bold flex items-center gap-1.5 text-xs">
+            {isPickup ? <MapPin size={13} /> : <User size={13} />}
             {isPickup ? "Local de Retirada" : "Cliente"}
           </div>
-          <p className="font-medium">
-            {order.shipping_name} ({order.shipping_document})
+          <p className="font-medium truncate">
+            {order.shipping_name}{" "}
+            {order.shipping_document && `(${order.shipping_document})`}
           </p>
 
           {!isPickup && (
@@ -187,19 +198,20 @@ function OrderCard({
           )}
 
           <div className="pt-2 border-t border-border/20 font-bold space-y-1">
-            <div className="flex justify-between">
-              <span className="flex items-center gap-1">
+            <div className="flex justify-between items-center gap-2">
+              <span className="flex items-center gap-1 shrink-0">
                 <Truck size={12} /> Serviço:
               </span>{" "}
-              {order.shipping_company_name || "N/A"}
+              <span className="truncate text-right">
+                {order.shipping_company_name || "N/A"}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="flex items-center gap-1">Frete:</span>{" "}
-              {formatBRL(Number(order.shipping_cost || 0))}
+            <div className="flex justify-between items-center">
+              <span>Frete:</span>{" "}
+              <span>{formatBRL(Number(order.shipping_cost || 0))}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="flex items-center gap-1">Peso:</span>{" "}
-              {order.total_weight}kg
+            <div className="flex justify-between items-center">
+              <span>Peso:</span> <span>{order.total_weight}kg</span>
             </div>
           </div>
         </div>
@@ -209,49 +221,55 @@ function OrderCard({
             href={`https://www.melhorrastreio.com.br/rastreio/${order.tracking_code}`}
             target="_blank"
             rel="noreferrer"
-            className="block bg-blue-50 p-2 rounded border border-blue-100 hover:bg-blue-100 transition-colors"
+            className="block bg-blue-50/80 dark:bg-blue-950/30 p-2 rounded border border-blue-200 dark:border-blue-900 hover:bg-blue-100 transition-colors"
           >
-            <p className="font-bold text-blue-800 flex justify-between items-center">
-              Rastreio: {order.tracking_code} <ExternalLink size={10} />
+            <p className="font-bold text-blue-800 dark:text-blue-300 flex justify-between items-center text-[10px] sm:text-xs">
+              <span className="truncate">Rastreio: {order.tracking_code}</span>
+              <ExternalLink size={11} className="shrink-0 ml-1" />
             </p>
           </a>
         )}
 
-        {/* Botão que aciona o Modal de Produtos detalhados */}
+        {/* Modal de Produtos Detalhados com Margin/Espaçamento Lateral no Mobile */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger
             render={
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full h-8 text-xs flex items-center justify-center gap-2"
+                className="w-full h-8 text-xs flex items-center justify-between gap-2"
               >
-                <Package size={14} /> Ver Produtos ({order.order_items.length}){" "}
-                <Eye size={12} className="ml-auto text-muted-foreground" />
+                <span className="flex items-center gap-1.5 truncate">
+                  <Package size={14} /> Ver Produtos ({order.order_items.length}
+                  )
+                </span>
+                <Eye size={12} className="text-muted-foreground shrink-0" />
               </Button>
             }
           ></DialogTrigger>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+
+          {/* w-[calc(100%-2rem)] garante 1rem de espaçamento nas bordas laterais do celular */}
+          <DialogContent className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] rounded-xl sm:rounded-lg overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="text-sm font-bold flex items-center gap-2">
                 <Package size={16} /> Itens do Pedido #{order.id.slice(0, 8)}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 mt-2">
+            <div className="space-y-2.5 mt-2">
               {order.order_items.map((i: any) => (
                 <div
                   key={i.id}
-                  className="flex items-center gap-3 p-2 rounded-lg border border-border/60 bg-muted/20"
+                  className="flex items-center gap-2.5 p-2 rounded-lg border border-border/60 bg-muted/20"
                 >
-                  {/* Foto do produto/variante */}
+                  {/* Foto do produto */}
                   {i.product_image ? (
                     <img
                       src={i.product_image}
                       alt={i.product_name}
-                      className="w-14 h-14 object-cover rounded-md border border-border shrink-0"
+                      className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-md border border-border shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 bg-muted rounded-md border border-border flex items-center justify-center shrink-0 text-[10px] text-muted-foreground">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-muted rounded-md border border-border flex items-center justify-center shrink-0 text-[9px] text-muted-foreground text-center p-1">
                       Sem foto
                     </div>
                   )}
@@ -263,10 +281,14 @@ function OrderCard({
                     </p>
                     <div className="flex flex-wrap gap-1 my-1">
                       {i.cor && (
-                        <Badge className="text-[9px]">Cor: {i.cor}</Badge>
+                        <Badge className="text-[8px] px-1 py-0">
+                          Cor: {i.cor}
+                        </Badge>
                       )}
                       {i.tamanho && (
-                        <Badge className="text-[9px]">Tam: {i.tamanho}</Badge>
+                        <Badge className="text-[8px] px-1 py-0">
+                          Tam: {i.tamanho}
+                        </Badge>
                       )}
                     </div>
                     <p className="text-[10px] text-muted-foreground">
@@ -291,34 +313,42 @@ function OrderCard({
           </DialogContent>
         </Dialog>
 
-        <div className="flex justify-between pt-2 border-t border-border gap-2">
+        {/* Rodapé do Card */}
+        <div className="flex flex-wrap items-center justify-between pt-2 border-t border-border gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-[10px]"
+            className="h-8 text-[10px] flex-1 sm:flex-none"
             onClick={() =>
               updateArchive({ id: order.id, is_archived: !order.is_archived })
             }
             disabled={isArchivePending}
           >
             {order.is_archived ? (
-              <ArchiveRestore size={14} className="mr-1" />
+              <ArchiveRestore size={13} className="mr-1" />
             ) : (
-              <Archive size={14} className="mr-1" />
+              <Archive size={13} className="mr-1" />
             )}
             {order.is_archived ? "Desarquivar" : "Arquivar"}
           </Button>
-          <div className="flex gap-2">
+
+          {order.shipping_phone && (
             <a
-              href={`https://wa.me/${order.shipping_phone?.replace(/\D/g, "")}`}
+              href={`https://wa.me/${order.shipping_phone.replace(/\D/g, "")}`}
               target="_blank"
               rel="noreferrer"
+              className="flex-1 sm:flex-none"
             >
-              <Button size="sm" variant="outline" className="h-8 text-[10px]">
-                <MessageCircle size={14} className="mr-1" /> WhatsApp
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-[10px] w-full"
+              >
+                <MessageCircle size={13} className="mr-1 text-emerald-600" />{" "}
+                WhatsApp
               </Button>
             </a>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
